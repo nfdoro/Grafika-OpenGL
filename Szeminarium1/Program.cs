@@ -118,7 +118,7 @@ namespace Szeminarium1
                 1.0f, 0.0f, 0.0f, 1.0f,
                 1.0f, 1.0f, 0.0f, 1.0f,
                 0.0f, 0.0f, 0.0f, 1.0f,
-                1.0f, 0.0f, 0.0f, 1.0f,
+                1.0f, 0.0f, 1.0f, 1.0f,
             };
 
             uint[] indexArray = new uint[] { 
