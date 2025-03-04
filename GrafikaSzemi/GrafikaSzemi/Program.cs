@@ -13,7 +13,7 @@ namespace Szeminarium1
 
         private static readonly string VertexShaderSource = @"
         #version 330 core
-        layout (location = 0) in vec3 vPos;
+        layout (location = 0) in vec3 vPos2;
 		layout (location = 1) in vec4 vCol;
 
 		out vec4 outCol;
@@ -50,6 +50,7 @@ namespace Szeminarium1
             graphicWindow.Update += GraphicWindow_Update;
             graphicWindow.Render += GraphicWindow_Render;
 
+
             graphicWindow.Run();
         }
 
@@ -81,10 +82,10 @@ namespace Szeminarium1
                 throw new Exception("Fragment shader failed to compile: " + Gl.GetShaderInfoLog(fshader)); 
 
             program = Gl.CreateProgram();
-            Gl.LinkProgram(program);
+        
             Gl.AttachShader(program, vshader);
             Gl.AttachShader(program, fshader);
-       
+            Gl.LinkProgram(program);
             Gl.DetachShader(program, vshader);
             Gl.DetachShader(program, fshader);
             Gl.DeleteShader(vshader);
