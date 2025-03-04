@@ -81,10 +81,10 @@ namespace Szeminarium1
                 throw new Exception("Fragment shader failed to compile: " + Gl.GetShaderInfoLog(fshader)); 
 
             program = Gl.CreateProgram();
-            Gl.AttachShader(program, fshader);
-            Gl.AttachShader(program, vshader);
-           
             Gl.LinkProgram(program);
+            Gl.AttachShader(program, vshader);
+            Gl.AttachShader(program, fshader);
+       
             Gl.DetachShader(program, vshader);
             Gl.DetachShader(program, fshader);
             Gl.DeleteShader(vshader);
