@@ -73,7 +73,7 @@ namespace Szeminarium1
                 throw new Exception("Vertex shader failed to compile: " + Gl.GetShaderInfoLog(vshader)); 
             
             Gl.ShaderSource(fshader, FragmentShaderSource);
-            //Gl.CompileShader(fshader);
+            Gl.CompileShader(fshader);
 
             //fragment shader hiba kezeles
             Gl.GetShader(fshader, ShaderParameterName.CompileStatus, out int fStatus);
@@ -83,7 +83,7 @@ namespace Szeminarium1
             program = Gl.CreateProgram();
             Gl.AttachShader(program, vshader);
             Gl.AttachShader(program, fshader);
-            Gl.LinkProgram(program);
+            //Gl.LinkProgram(program);
             Gl.DetachShader(program, vshader);
             Gl.DetachShader(program, fshader);
             Gl.DeleteShader(vshader);
@@ -158,7 +158,6 @@ namespace Szeminarium1
                 throw new Exception("Hiba torent a colorArray kezelesekor");
             }
 
-
             uint indices = Gl.GenBuffer();
             Gl.BindBuffer(GLEnum.ElementArrayBuffer, indices);
             Gl.BufferData(GLEnum.ElementArrayBuffer, (ReadOnlySpan<uint>)indexArray.AsSpan(), GLEnum.StaticDraw);
@@ -171,8 +170,6 @@ namespace Szeminarium1
                 throw new Exception("Hiba torent az indexArray kezelesekor");
             }
 
-
-          
 
             Gl.UseProgram(program);
 
