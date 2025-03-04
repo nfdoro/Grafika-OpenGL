@@ -140,20 +140,38 @@ namespace Szeminarium1
             Gl.BufferData(GLEnum.ArrayBuffer, (ReadOnlySpan<float>)vertexArray.AsSpan(), GLEnum.StaticDraw);
             Gl.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 0, null);
             Gl.EnableVertexAttribArray(0);
+
+            if (Gl.GetError() != GLEnum.NoError)
+            {
+                throw new Exception("Hiba torent a vertexArray kezelesekor");
+            }
          
             uint colors = Gl.GenBuffer();
             Gl.BindBuffer(GLEnum.ArrayBuffer, colors);
             Gl.BufferData(GLEnum.ArrayBuffer, (ReadOnlySpan<float>)colorArray.AsSpan(), GLEnum.StaticDraw);
             Gl.VertexAttribPointer(1, 4, VertexAttribPointerType.Float, false, 0, null);
-            //Gl.EnableVertexAttribArray(1);
+            Gl.EnableVertexAttribArray(1);
+
+            if (Gl.GetError() != GLEnum.NoError)
+            {
+                throw new Exception("Hiba torent a colorArray kezelesekor");
+            }
 
 
-           
             uint indices = Gl.GenBuffer();
             Gl.BindBuffer(GLEnum.ElementArrayBuffer, indices);
             Gl.BufferData(GLEnum.ElementArrayBuffer, (ReadOnlySpan<uint>)indexArray.AsSpan(), GLEnum.StaticDraw);
 
             Gl.BindBuffer(GLEnum.ArrayBuffer, 0);
+
+
+            if (Gl.GetError() != GLEnum.NoError)
+            {
+                throw new Exception("Hiba torent az indexArray kezelesekor");
+            }
+
+
+          
 
             Gl.UseProgram(program);
 
