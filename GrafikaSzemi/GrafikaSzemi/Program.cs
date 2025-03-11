@@ -13,7 +13,7 @@ namespace Szeminarium1
 
         private static readonly string VertexShaderSource = @"
         #version 330 core
-        layout (location = 0) in vec3 vPos2;
+        layout (location = 0) in vec3 vPos;
 		layout (location = 1) in vec4 vCol;
 
 		out vec4 outCol;
@@ -116,26 +116,45 @@ namespace Szeminarium1
 
             uint vao = Gl.GenVertexArray();
             Gl.BindVertexArray(vao);
-
+            //x y z
+            
             float[] vertexArray = new float[] {
-                -0.8f, -0.8f, 0.0f,
-                +0.5f, -0.7f, 0.0f,
-                 0.7f, +0.7f, 0.0f,
-                 1f, 1f, 0f
+                 0.0f, 0.0f, 0.0f, //a
+                 +0.43f, +0.25f, 0.0f, //b
+                 +0.43f, -0.25f, 0.0f, //c
+                 0, -0.5f, 0f //d
+
+
+                 //-0.43f, -0.25f, 0f,//e
+                 //-0.43f, +0.25f, 0f,//f
+                 //0, 0.5f, 0.0f, //g
             };
 
+            //r g b a 
             float[] colorArray = new float[] {
                 1.0f, 0.0f, 0.0f, 1.0f,
-                1.0f, 1.0f, 0.0f, 1.0f,
-                0.0f, 1.0f, 1.0f, 1.0f,
-                1.0f, 0.0f, 1.0f, 1.0f,
+                1.0f, 0.0f, 0.0f, 1.0f,
+                1.0f, 0.0f, 0.0f, 1.0f,
+                1.0f, 0.0f, 0.0f, 1.0f,
+                //1.0f, 0.0f, 1.0f, 1.0f,
+                //1.0f, 0.0f, 1.0f, 1.0f,
+                //1.0f, 0.0f, 1.0f, 1.0f,
             };
 
+
+            //haromszogek a pontok alapjan 
             uint[] indexArray = new uint[] {
-                0, 1, 2,
-                2, 0, 0
+                                0, 2, 1,
+                                0, 3, 2
+
+
+                                //0, 6, 5,
+                                //0, 5, 4,
+                                //0, 4, 3,
+                                //0, 3, 2,
             };
 
+            
          
 
             uint vertices = Gl.GenBuffer();
