@@ -17,9 +17,10 @@ namespace Szeminarium1_24_02_17_2
 
         private static uint program;
 
-        private static GlCube glCubeCentered;
+        //private static GlCube glCubeCentered;
+        //private static GlCube glCubeRotating;
 
-        private static GlCube glCubeRotating;
+        private static GlCube glCubeRubic;
 
         private const string ModelMatrixVariableName = "uModel";
         private const string ViewMatrixVariableName = "uView";
@@ -88,8 +89,6 @@ namespace Szeminarium1_24_02_17_2
 
             Gl = window.CreateOpenGL();
             Gl.ClearColor(System.Drawing.Color.White);
-
-            SetUpObjects();
 
             LinkProgram();
 
@@ -186,7 +185,7 @@ namespace Szeminarium1_24_02_17_2
             DrawRubicCenterCube();
            
         }
-
+        /*
         private static unsafe void DrawRevolvingCube()
         {
             Matrix4X4<float> diamondScale = Matrix4X4.CreateScale(0.25f);
@@ -202,29 +201,149 @@ namespace Szeminarium1_24_02_17_2
             Gl.DrawElements(GLEnum.Triangles, glCubeRotating.IndexArrayLength, GLEnum.UnsignedInt, null);
             Gl.BindVertexArray(0);
         }
+        */
+
 
         public static unsafe void DrawRubicCenterCube()
         {
-            for(float i = 0; i <= 2.6f; i+=1.3f)
+
+            
+            for (float i = 0; i <= 2.6f; i += 1.3f)
             {
                 for (float j = 0; j <= 2.6f; j += 1.3f)
                 {
                     for (float k = 0; k <= 2.6f; k += 1.3f)
                     {
 
+                        //sarkak
+
+                        //teteje
+                        if (j == 2.6f && k == 2.6f && i == 2.6f)
+                        {
+                            SetUpObject(true, true, false, true, false, false);
+                        }
+                        else if (j == 2.6f && k == 2.6f && i == 0.0f)
+                        {
+                            SetUpObject(true, true, true, false, false, false);
+                        }
+                        else if (j == 2.6f && k == 0.0f && i == 0.0f)
+                        {
+                            SetUpObject(true, false, true, false, true, false);
+                        }
+                        else if (j == 2.6f && k == 0.0f && i == 2.6f)
+                        {
+                            SetUpObject(true, false, false, true, true, false);
+                        }
+                        //alja
+                        else if (j == 0.0f && k == 2.6f && i == 2.6f)
+                        {
+                            SetUpObject(false, true, false, true, false, true);
+                        }
+                        else if (j == 0.0f && k == 2.6f && i == 0.0f)
+                        {
+                            SetUpObject(false, true, true, false, false, true);
+                        }
+                        else if (j == 0.0f && k == 0.0f && i == 0.0f)
+                        {
+                            SetUpObject(false, false, true, false, true, true);
+                        }
+                        else if (j == 0.0f && k == 0.0f && i == 2.6f)
+                        {
+                            SetUpObject(false, false, false, true, true, true);
+                        }
+                        //Szelso oldalak
+                        else if (k == 2.6f && i == 0.0f)
+                        {
+                            SetUpObject(false, true, true, false, false, false);
+                        }
+                        else if (k == 2.6f && i == 2.6f)
+                        {
+                            SetUpObject(false, true, false, true, false, false);
+                        }
+                        else if (k == 0.0f && i == 2.6f)
+                        {
+                            SetUpObject(false, false, false, true, true, false);
+                        }
+                        else if (k == 0.0f && i == 0.0f)
+                        {
+                            SetUpObject(false, false, true, false, true, false);
+                        }
+                        else if (j == 2.6f && i == 0.0f)
+                        {
+                            SetUpObject(true, false, true, false, false, false);
+                        }
+                        else if (j == 2.6f && i == 2.6f)
+                        {
+                            SetUpObject(true, false, false, true, false, false);
+                        }
+                        else if (j == 2.6f && k == 2.6f)
+                        {
+                            SetUpObject(true, true, false, false, false, false);
+                        }
+                        else if (j == 2.6f && k == 0.0f)
+                        {
+                            SetUpObject(true, false, false, false, true, false);
+                        }
+                        else if (j == 0.0f && i == 0.0f)
+                        {
+                            SetUpObject(false, false, true, false, false, true);
+                        }
+                        
+                        else if (j == 0.0f && i == 2.6f)
+                        {
+                            SetUpObject(false, false, false, true, false, true);
+                        }
+                        
+                        else if (j == 0.0f && k == 2.6f)
+                        {
+                            SetUpObject(false, true, false, false, false, true);
+                        }
+                        else if (j == 0.0f && k == 0.0f)
+                        {
+                            SetUpObject(false, false, false, false, true, true);
+                        }
+                        
+                        //kozepso reszek
+                        else if (k == 2.6f)
+                        {
+                            SetUpObject(false, true, false, false, false, false);
+                        }
+                        else if (k == 0f)
+                        {
+                            SetUpObject(false, false, false, false, true, false);
+                        }
+                        else if (i == 0.0f)
+                        {
+                            SetUpObject(false, false, true, false, false, false);
+                        }
+                        else if (i == 2.6f)
+                        {
+                            SetUpObject(false, false, false, true, false, false);
+                        }
+                        else if (j == 2.6f)
+                        {
+                            SetUpObject(true, false, false, false, false, false);
+                        }
+                        else if (j == 0)
+                        {
+                            SetUpObject(false, false, false, false, false, true);
+                        }
+                        else
+                        {
+                            SetUpObject(false, false, false, false, false, false);
+                        }
                         DrawCube(i, j, k);
                     }
                 }
             }
-
         }
         private static unsafe void DrawCube(float x, float y, float z)
         {
             Matrix4X4<float> trans = Matrix4X4.CreateTranslation(x, y, z);
             var modelMatrixForCenterCube = Matrix4X4.CreateScale(0.25f) + trans;
             SetModelMatrix(modelMatrixForCenterCube);
-            Gl.BindVertexArray(glCubeCentered.Vao);
-            Gl.DrawElements(GLEnum.Triangles, glCubeCentered.IndexArrayLength, GLEnum.UnsignedInt, null);
+            Gl.BindVertexArray(glCubeRubic.Vao);
+            Gl.DrawElements(GLEnum.Triangles, glCubeRubic.IndexArrayLength, GLEnum.UnsignedInt, null);
             Gl.BindVertexArray(0);
         }
 
@@ -240,7 +359,7 @@ namespace Szeminarium1_24_02_17_2
             Gl.UniformMatrix4(location, 1, false, (float*)&modelMatrix);
             CheckError();
         }
-
+        /*
         private static unsafe void SetUpObjects()
         {
 
@@ -261,14 +380,58 @@ namespace Szeminarium1_24_02_17_2
             face6Color = [0.5f, 0.5f, 0.0f, 1.0f];
 
             glCubeRotating = GlCube.CreateCubeWithFaceColors(Gl, face1Color, face2Color, face3Color, face4Color, face5Color, face6Color);
+        }*/
+
+     
+        private static unsafe void SetUpObject(bool blue,bool green,bool red,bool cian, bool yellow, bool magenta)
+        {
+
+            float[] face1Color = [0f, 0f, 0f, 1f];
+            float[] face2Color = [0f, 0f, 0f, 1f];
+            float[] face3Color = [0f, 0f, 0f, 1f];
+            float[] face4Color = [0f, 0f, 0f, 1f];
+            float[] face5Color = [0f, 0f, 0f, 1f];
+            float[] face6Color = [0f, 0f, 0f, 1f];
+            if (blue)
+           {
+                 face1Color = [0.0f, 0.0f, 1.0f, 1.0f];
+           }
+            if (green)
+            {
+                 face2Color = [0.0f, 1.0f, 0.0f, 1.0f];
+            }
+
+            if (red)
+            {
+                 face3Color = [1.0f, 0.0f, 0.0f, 1.0f];
+            }
+
+            if (magenta)
+            {
+                 face4Color = [1.0f, 0.0f, 1.0f, 1.0f];
+            }
+
+            if (yellow)
+            {
+                 face5Color = [1.0f, 1.0f, 0.0f, 1.0f];
+            }
+
+            if (cian)
+            {
+                face6Color = [0.0f, 1.0f, 1.0f, 1.0f];
+            }
+
+            glCubeRubic = GlCube.CreateCubeWithFaceColors(Gl, face1Color, face2Color, face3Color, face4Color, face5Color, face6Color);
+
         }
 
         
 
         private static void Window_Closing()
         {
-            glCubeCentered.ReleaseGlCube();
-            glCubeRotating.ReleaseGlCube();
+            //glCubeCentered.ReleaseGlCube();
+            //glCubeRotating.ReleaseGlCube();
+            glCubeRubic.ReleaseGlCube();
         }
 
         private static unsafe void SetProjectionMatrix()

@@ -4,11 +4,11 @@ namespace Szeminarium1_24_02_17_2
 {
     internal class CameraDescriptor
     {
-        private double DistanceToOrigin = 1;
+        private double DistanceToOrigin = 5;
 
-        private double AngleToZYPlane = 0;
+        private double AngleToZYPlane = 0.7;
 
-        private double AngleToZXPlane = 0;
+        private double AngleToZXPlane = 0.6;
 
         private const double DistanceScaleFactor = 1.1;
 
