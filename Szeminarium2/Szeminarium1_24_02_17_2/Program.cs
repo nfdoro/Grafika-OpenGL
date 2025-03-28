@@ -7,8 +7,8 @@ namespace Szeminarium1_24_02_17_2
 {
     internal static class Program
     {
-        private static CameraDescriptor cameraDescriptor = new();
-
+        //private static CameraDescriptor cameraDescriptor = new();
+        private static NewCameraDescriptor cameraDescriptor = new();
         private static CubeArrangementModel cubeArrangementModel = new();
 
         private static IWindow window;
@@ -131,30 +131,46 @@ namespace Szeminarium1_24_02_17_2
         {
             switch (key)
             {
-                case Key.Left:
-                    cameraDescriptor.DecreaseZYAngle();
+                // elore, hatra, balra, jobbra, felfele, lefele
+                case Key.W:
+                    cameraDescriptor.MoveForward();
                     break;
-                    ;
-                case Key.Right:
-                    cameraDescriptor.IncreaseZYAngle();
+                case Key.S:
+                    cameraDescriptor.MoveBackward();
                     break;
-                case Key.Down:
-                    cameraDescriptor.IncreaseDistance();
-                    break;
-                case Key.Up:
-                    cameraDescriptor.DecreaseDistance();
-                    break;
-                case Key.U:
-                    cameraDescriptor.IncreaseZXAngle();
+                case Key.A:
+                    cameraDescriptor.MoveLeft();
                     break;
                 case Key.D:
-                    cameraDescriptor.DecreaseZXAngle();
+                    cameraDescriptor.MoveRight();
                     break;
+                case Key.R:
+                    cameraDescriptor.MoveUp();
+                    break;
+                case Key.F:
+                    cameraDescriptor.MoveDown();
+                    break;
+
+                //forgatas: yaw (balra-jobbra), pitch (fel-le)
+                case Key.Left:
+                    cameraDescriptor.YawLeft();
+                    break;
+                case Key.Right:
+                    cameraDescriptor.YawRight();
+                    break;
+                case Key.Up:
+                    cameraDescriptor.PitchUp();
+                    break;
+                case Key.Down:
+                    cameraDescriptor.PitchDown();
+                    break;
+
                 case Key.Space:
                     cubeArrangementModel.AnimationEnabeld = !cubeArrangementModel.AnimationEnabeld;
                     break;
             }
         }
+
 
         private static void Window_Update(double deltaTime)
         {
@@ -339,9 +355,24 @@ namespace Szeminarium1_24_02_17_2
         }
         private static unsafe void DrawCube(float x, float y, float z)
         {
-            Matrix4X4<float> trans = Matrix4X4.CreateTranslation(x, y, z);
-            var modelMatrixForCenterCube = Matrix4X4.CreateScale(0.25f) + trans;
-            SetModelMatrix(modelMatrixForCenterCube);
+            float offset = 1.3f;
+            Matrix4X4<float> trans = Matrix4X4.CreateTranslation(x - offset, y - offset, z - offset);
+            float angle = (float)(cubeArrangementModel.RightFaceRotationAngle * Math.PI / 180f);
+
+            Matrix4X4<float> rotationMatrix = Matrix4X4.CreateRotationX(angle);
+
+            Matrix4X4<float> modelMatrix;
+
+
+            if (x == 2.6f)
+            {
+                modelMatrix = Matrix4X4.CreateScale(1.25f) * trans * rotationMatrix;
+            }
+            else
+            {
+                modelMatrix = Matrix4X4.CreateScale(1.25f) * trans;
+            }
+            SetModelMatrix(modelMatrix);
             Gl.BindVertexArray(glCubeRubic.Vao);
             Gl.DrawElements(GLEnum.Triangles, glCubeRubic.IndexArrayLength, GLEnum.UnsignedInt, null);
             Gl.BindVertexArray(0);
@@ -452,6 +483,7 @@ namespace Szeminarium1_24_02_17_2
         {
             var viewMatrix = Matrix4X4.CreateLookAt(cameraDescriptor.Position, cameraDescriptor.Target, cameraDescriptor.UpVector);
             int location = Gl.GetUniformLocation(program, ViewMatrixVariableName);
+
 
             if (location == -1)
             {

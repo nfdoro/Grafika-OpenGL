@@ -2,6 +2,7 @@
 {
     internal class CubeArrangementModel
     {
+        public double RightFaceRotationAngle { get; set; } = 0;
         /// <summary>
         /// Gets or sets wheather the animation should run or it should be frozen.
         /// </summary>
@@ -42,6 +43,8 @@
             DiamondCubeAngleOwnRevolution = Time * 10;
 
             DiamondCubeAngleRevolutionOnGlobalY = -Time;
+
+            RightFaceRotationAngle += 45.0 * deltaTime;
         }
     }
 }
