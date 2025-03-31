@@ -3,6 +3,7 @@ using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 using System.Numerics;
+using System.Transactions;
 
 namespace Szeminarium1_24_02_17_2
 {
@@ -210,6 +211,33 @@ namespace Szeminarium1_24_02_17_2
                         cubeArrangementModel.AnimationEnabeld = true;
                     }
                     break;
+
+                case Key.Keypad2: 
+                    if (!cubeArrangementModel.AnimationEnabeld)
+                    {
+                        cubeArrangementModel.BottomAnimationEnabled = true;
+                        cubeArrangementModel.TargetBottomFaceRotationAngle = cubeArrangementModel.BottomFaceRotationAngle + 90;
+                        cubeArrangementModel.AnimationEnabeld = true;
+                    }
+                    break;
+
+                case Key.Keypad7: 
+                    if (!cubeArrangementModel.AnimationEnabeld)
+                    {
+                        cubeArrangementModel.FrontAnimationEnabled = true;
+                        cubeArrangementModel.TargetFrontFaceRotationAngle = cubeArrangementModel.FrontFaceRotationAngle + 90;
+                        cubeArrangementModel.AnimationEnabeld = true;
+                    }
+                    break;
+
+                case Key.Keypad9:
+                    if (!cubeArrangementModel.AnimationEnabeld)
+                    {
+                        cubeArrangementModel.BackAnimationEnabled = true;
+                        cubeArrangementModel.TargetBackFaceRotationAngle = cubeArrangementModel.BackFaceRotationAngle + 90;
+                        cubeArrangementModel.AnimationEnabeld = true;
+                    }
+                    break;
                 case Key.Space:
                    
                     //cubeArrangementModel.AnimationEnabeld = !cubeArrangementModel.AnimationEnabeld;
@@ -385,17 +413,21 @@ namespace Szeminarium1_24_02_17_2
         }
         private static unsafe void DrawRubikCenterCube()
         {
-             float offset = 1.3f;
+            float offset = 1.3f;
+         
             foreach (var instance in rubikCubes)
             {
                 Matrix4X4<float> trans = Matrix4X4.CreateTranslation<float>(new Vector3D<float>(instance.Position.X, instance.Position.Y, instance.Position.Z));
-                Matrix4X4<float> modelMatrix = Matrix4X4.CreateScale(1.25f) * trans;
-                Matrix4X4<float> scale = Matrix4X4.CreateScale(1.25f);
+
+                float baseScale = 1.25f;
+                float pulsationScale = baseScale * cubeArrangementModel.PulseScale;
+                Matrix4X4<float> scale = Matrix4X4.CreateScale(pulsationScale);
+                Matrix4X4<float> modelMatrix = scale * trans;
                 Matrix4X4<float> rotationMatrix = Matrix4X4<float>.Identity;
 
-
                 instance.ChekerPosition = instance.Position;
-                if (instance.ChekerPosition.X == -offset )
+                double eps = 0.0001;
+                if (Math.Abs(instance.ChekerPosition.X - (-offset))<eps )
                 {
                     float angle = (float)(cubeArrangementModel.LeftFaceRotationAngle * Math.PI / 180f);
                     rotationMatrix *= Matrix4X4.CreateRotationX(angle);
@@ -403,7 +435,7 @@ namespace Szeminarium1_24_02_17_2
 
                     modelMatrix = scale * trans * rotationMatrix;
                 }
-                if (instance.ChekerPosition.X == (2.6f - offset))
+                if (Math.Abs(instance.ChekerPosition.X - (2.6f - offset)) < eps)
                 {
                     float angle = (float)(cubeArrangementModel.RightFaceRotationAngle * Math.PI / 180f);
                     rotationMatrix *= Matrix4X4.CreateRotationX(angle);
@@ -411,7 +443,7 @@ namespace Szeminarium1_24_02_17_2
 
                     modelMatrix = scale * trans * rotationMatrix;
                 }
-                if(instance.ChekerPosition.Y == (2.6f - offset))
+                if (Math.Abs(instance.ChekerPosition.Y - (2.6f - offset)) < eps)
                 {
                     float angle = (float)(cubeArrangementModel.TopFaceRotationAngle * Math.PI / 180f);
                     rotationMatrix *= Matrix4X4.CreateRotationY(angle);
@@ -420,11 +452,39 @@ namespace Szeminarium1_24_02_17_2
                     modelMatrix = scale * trans * rotationMatrix;
                 }
 
+                if  (Math.Abs(instance.ChekerPosition.Y -(-offset)) < eps) 
+                {
+                    float angle = (float)(cubeArrangementModel.BottomFaceRotationAngle * Math.PI / 180f);
+                    rotationMatrix *= Matrix4X4.CreateRotationY(angle);
+                    instance.ChekerPosition = Vector3D.Transform(instance.Position, rotationMatrix);
+                    modelMatrix = scale * trans * rotationMatrix;
+                }
+
+
+                if (Math.Abs(instance.ChekerPosition.Z - (2.6f - offset)) < eps)
+                {
+                    float angle = (float)(cubeArrangementModel.FrontFaceRotationAngle * Math.PI / 180f);
+                    rotationMatrix *= Matrix4X4.CreateRotationZ(angle);
+                    instance.ChekerPosition = Vector3D.Transform(instance.Position, rotationMatrix);
+                    modelMatrix = scale * trans * rotationMatrix;
+                }
+                if (Math.Abs(instance.ChekerPosition.Z -(-offset))<eps)
+                {
+                    float angle = (float)(cubeArrangementModel.BackFaceRotationAngle * Math.PI / 180f);
+                    rotationMatrix *= Matrix4X4.CreateRotationZ(angle);
+                    instance.ChekerPosition = Vector3D.Transform(instance.Position, rotationMatrix);
+                    modelMatrix = scale * trans * rotationMatrix;
+                }
+
+
                 SetModelMatrix(modelMatrix);
                 Gl.BindVertexArray(instance.Cube.Vao);
                 Gl.DrawElements(GLEnum.Triangles, instance.Cube.IndexArrayLength, GLEnum.UnsignedInt, null);
                 Gl.BindVertexArray(0);
+
+               
             }
+           
         }
 
         private static unsafe void SetModelMatrix(Matrix4X4<float> modelMatrix)
@@ -439,29 +499,6 @@ namespace Szeminarium1_24_02_17_2
             Gl.UniformMatrix4(location, 1, false, (float*)&modelMatrix);
             CheckError();
         }
-        /*
-        private static unsafe void SetUpObjects()
-        {
-
-            float[] face1Color = [1.0f, 0.0f, 0.0f, 1.0f];
-            float[] face2Color = [0.0f, 1.0f, 0.0f, 1.0f];
-            float[] face3Color = [0.0f, 0.0f, 1.0f, 1.0f];
-            float[] face4Color = [1.0f, 0.0f, 1.0f, 1.0f];
-            float[] face5Color = [0.0f, 1.0f, 1.0f, 1.0f];
-            float[] face6Color = [1.0f, 1.0f, 0.0f, 1.0f];
-
-            glCubeCentered = GlCube.CreateCubeWithFaceColors(Gl, face1Color, face2Color, face3Color, face4Color, face5Color, face6Color);
-
-            face1Color = [0.5f, 0.0f, 0.0f, 1.0f];
-            face2Color = [0.0f, 0.5f, 0.0f, 1.0f];
-            face3Color = [0.0f, 0.0f, 0.5f, 1.0f];
-            face4Color = [0.5f, 0.0f, 0.5f, 1.0f];
-            face5Color = [0.0f, 0.5f, 0.5f, 1.0f];
-            face6Color = [0.5f, 0.5f, 0.0f, 1.0f];
-
-            glCubeRotating = GlCube.CreateCubeWithFaceColors(Gl, face1Color, face2Color, face3Color, face4Color, face5Color, face6Color);
-        }*/
-
      
         private static unsafe GlCube SetUpObject(bool blue,bool green,bool red,bool cian, bool yellow, bool magenta)
         {
