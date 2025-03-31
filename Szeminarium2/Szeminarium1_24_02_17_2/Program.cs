@@ -2,11 +2,21 @@
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
+using System.Numerics;
 
 namespace Szeminarium1_24_02_17_2
 {
     internal static class Program
     {
+        class CubeInstance
+        {
+            public GlCube Cube { get; set; }
+            public Vector3 Position { get; set; }
+        }
+
+        private static List<CubeInstance> rubikCubes = new List<CubeInstance>();
+
+
         //private static CameraDescriptor cameraDescriptor = new();
         private static NewCameraDescriptor cameraDescriptor = new();
         private static CubeArrangementModel cubeArrangementModel = new();
@@ -14,13 +24,18 @@ namespace Szeminarium1_24_02_17_2
         private static IWindow window;
 
         private static GL Gl;
+        private static float faceToRotate;
 
         private static uint program;
 
         //private static GlCube glCubeCentered;
         //private static GlCube glCubeRotating;
 
-        private static GlCube glCubeRubic;
+        private static GlCube glCubeRubik;
+
+        private static bool leftRotationActive = false;
+        private static bool rightRotationActive = false;
+
 
         private const string ModelMatrixVariableName = "uModel";
         private const string ViewMatrixVariableName = "uView";
@@ -76,6 +91,7 @@ namespace Szeminarium1_24_02_17_2
             window.Run();
         }
 
+
         private static void Window_Load()
         {
             //Console.WriteLine("Load");
@@ -96,6 +112,8 @@ namespace Szeminarium1_24_02_17_2
 
             Gl.Enable(EnableCap.DepthTest);
             Gl.DepthFunc(DepthFunction.Lequal);
+
+            InitRubikCube();
         }
 
         private static void LinkProgram()
@@ -129,6 +147,7 @@ namespace Szeminarium1_24_02_17_2
 
         private static void Keyboard_KeyDown(IKeyboard keyboard, Key key, int arg3)
         {
+   
             switch (key)
             {
                 // elore, hatra, balra, jobbra, felfele, lefele
@@ -165,8 +184,34 @@ namespace Szeminarium1_24_02_17_2
                     cameraDescriptor.PitchDown();
                     break;
 
+                case Key.Keypad4:
+                    if (!cubeArrangementModel.AnimationEnabeld)
+                    {
+                        cubeArrangementModel.LeftAnimationEnabled = true;
+                        cubeArrangementModel.TargetLeftFaceRotationAngle = cubeArrangementModel.LeftFaceRotationAngle + 90;
+                        cubeArrangementModel.AnimationEnabeld = true;
+                    }
+                    break;
+
+                case Key.Keypad6:
+                    if (!cubeArrangementModel.AnimationEnabeld)
+                    {
+                        cubeArrangementModel.RightAnimationEnabled = true;
+                        cubeArrangementModel.TargetRightFaceRotationAngle = cubeArrangementModel.RightFaceRotationAngle + 90;
+                        cubeArrangementModel.AnimationEnabeld = true;
+                    }
+                    break;
+                case Key.Keypad8:
+                    if (!cubeArrangementModel.AnimationEnabeld)
+                    {
+                        cubeArrangementModel.TopAnimationEnabled = true;
+                        cubeArrangementModel.TargetTopFaceRotationAngle = cubeArrangementModel.TopFaceRotationAngle + 90;
+                        cubeArrangementModel.AnimationEnabeld = true;
+                    }
+                    break;
                 case Key.Space:
-                    cubeArrangementModel.AnimationEnabeld = !cubeArrangementModel.AnimationEnabeld;
+                   
+                    //cubeArrangementModel.AnimationEnabeld = !cubeArrangementModel.AnimationEnabeld;
                     break;
             }
         }
@@ -178,8 +223,7 @@ namespace Szeminarium1_24_02_17_2
             // multithreaded
             // make sure it is threadsafe
             // NO GL calls
-            cubeArrangementModel.AdvanceTime(deltaTime);
-        }
+            cubeArrangementModel.AdvanceTime(deltaTime);        }
 
         private static unsafe void Window_Render(double deltaTime)
         {
@@ -198,8 +242,8 @@ namespace Szeminarium1_24_02_17_2
             //DrawPulsingCenterCube();
             //DrawRevolvingCube();
 
-            DrawRubicCenterCube();
-           
+            DrawRubikCenterCube();
+
         }
         /*
         private static unsafe void DrawRevolvingCube()
@@ -220,10 +264,12 @@ namespace Szeminarium1_24_02_17_2
         */
 
 
-        public static unsafe void DrawRubicCenterCube()
+        public static unsafe void InitRubikCube()
         {
 
-            
+            rubikCubes.Clear();
+            float offset = 1.3f;
+            GlCube cube;
             for (float i = 0; i <= 2.6f; i += 1.3f)
             {
                 for (float j = 0; j <= 2.6f; j += 1.3f)
@@ -236,147 +282,159 @@ namespace Szeminarium1_24_02_17_2
                         //teteje
                         if (j == 2.6f && k == 2.6f && i == 2.6f)
                         {
-                            SetUpObject(true, true, false, true, false, false);
+                            cube =SetUpObject(true, true, false, true, false, false);
                         }
                         else if (j == 2.6f && k == 2.6f && i == 0.0f)
                         {
-                            SetUpObject(true, true, true, false, false, false);
+                            cube =SetUpObject(true, true, true, false, false, false);
                         }
                         else if (j == 2.6f && k == 0.0f && i == 0.0f)
                         {
-                            SetUpObject(true, false, true, false, true, false);
+                            cube = SetUpObject(true, false, true, false, true, false);
                         }
                         else if (j == 2.6f && k == 0.0f && i == 2.6f)
                         {
-                            SetUpObject(true, false, false, true, true, false);
+                            cube = SetUpObject(true, false, false, true, true, false);
                         }
                         //alja
                         else if (j == 0.0f && k == 2.6f && i == 2.6f)
                         {
-                            SetUpObject(false, true, false, true, false, true);
+                            cube = SetUpObject(false, true, false, true, false, true);
                         }
                         else if (j == 0.0f && k == 2.6f && i == 0.0f)
                         {
-                            SetUpObject(false, true, true, false, false, true);
+                            cube = SetUpObject(false, true, true, false, false, true);
                         }
                         else if (j == 0.0f && k == 0.0f && i == 0.0f)
                         {
-                            SetUpObject(false, false, true, false, true, true);
+                            cube = SetUpObject(false, false, true, false, true, true);
                         }
                         else if (j == 0.0f && k == 0.0f && i == 2.6f)
                         {
-                            SetUpObject(false, false, false, true, true, true);
+                            cube = SetUpObject(false, false, false, true, true, true);
                         }
                         //Szelso oldalak
                         else if (k == 2.6f && i == 0.0f)
                         {
-                            SetUpObject(false, true, true, false, false, false);
+                            cube = SetUpObject(false, true, true, false, false, false);
                         }
                         else if (k == 2.6f && i == 2.6f)
                         {
-                            SetUpObject(false, true, false, true, false, false);
+                            cube = SetUpObject(false, true, false, true, false, false);
                         }
                         else if (k == 0.0f && i == 2.6f)
                         {
-                            SetUpObject(false, false, false, true, true, false);
+                            cube = SetUpObject(false, false, false, true, true, false);
                         }
                         else if (k == 0.0f && i == 0.0f)
                         {
-                            SetUpObject(false, false, true, false, true, false);
+                            cube = SetUpObject(false, false, true, false, true, false);
                         }
                         else if (j == 2.6f && i == 0.0f)
                         {
-                            SetUpObject(true, false, true, false, false, false);
+                            cube = SetUpObject(true, false, true, false, false, false);
                         }
                         else if (j == 2.6f && i == 2.6f)
                         {
-                            SetUpObject(true, false, false, true, false, false);
+                            cube = SetUpObject(true, false, false, true, false, false);
                         }
                         else if (j == 2.6f && k == 2.6f)
                         {
-                            SetUpObject(true, true, false, false, false, false);
+                            cube = SetUpObject(true, true, false, false, false, false);
                         }
                         else if (j == 2.6f && k == 0.0f)
                         {
-                            SetUpObject(true, false, false, false, true, false);
+                            cube = SetUpObject(true, false, false, false, true, false);
                         }
                         else if (j == 0.0f && i == 0.0f)
                         {
-                            SetUpObject(false, false, true, false, false, true);
+                            cube = SetUpObject(false, false, true, false, false, true);
                         }
                         
                         else if (j == 0.0f && i == 2.6f)
                         {
-                            SetUpObject(false, false, false, true, false, true);
+                            cube = SetUpObject(false, false, false, true, false, true);
                         }
                         
                         else if (j == 0.0f && k == 2.6f)
                         {
-                            SetUpObject(false, true, false, false, false, true);
+                            cube = SetUpObject(false, true, false, false, false, true);
                         }
                         else if (j == 0.0f && k == 0.0f)
                         {
-                            SetUpObject(false, false, false, false, true, true);
+                            cube = SetUpObject(false, false, false, false, true, true);
                         }
                         
                         //kozepso reszek
                         else if (k == 2.6f)
                         {
-                            SetUpObject(false, true, false, false, false, false);
+                            cube = SetUpObject(false, true, false, false, false, false);
                         }
                         else if (k == 0f)
                         {
-                            SetUpObject(false, false, false, false, true, false);
+                            cube = SetUpObject(false, false, false, false, true, false);
                         }
                         else if (i == 0.0f)
                         {
-                            SetUpObject(false, false, true, false, false, false);
+                            cube = SetUpObject(false, false, true, false, false, false);
                         }
                         else if (i == 2.6f)
                         {
-                            SetUpObject(false, false, false, true, false, false);
+                            cube = SetUpObject(false, false, false, true, false, false);
                         }
                         else if (j == 2.6f)
                         {
-                            SetUpObject(true, false, false, false, false, false);
+                            cube = SetUpObject(true, false, false, false, false, false);
                         }
                         else if (j == 0)
                         {
-                            SetUpObject(false, false, false, false, false, true);
+                            cube = SetUpObject(false, false, false, false, false, true);
                         }
                         else
                         {
-                            SetUpObject(false, false, false, false, false, false);
+                            cube = SetUpObject(false, false, false, false, false, false);
                         }
-                        DrawCube(i, j, k);
+
+
+                        rubikCubes.Add(new CubeInstance { Cube = cube, Position = new Vector3(i - offset, j - offset, k - offset) });
+                        
                     }
                 }
             }
         }
-        private static unsafe void DrawCube(float x, float y, float z)
+        private static unsafe void DrawRubikCenterCube()
         {
-            float offset = 1.3f;
-            Matrix4X4<float> trans = Matrix4X4.CreateTranslation(x - offset, y - offset, z - offset);
-            float angle = (float)(cubeArrangementModel.RightFaceRotationAngle * Math.PI / 180f);
-
-            Matrix4X4<float> rotationMatrix = Matrix4X4.CreateRotationX(angle);
-
-            Matrix4X4<float> modelMatrix;
-
-
-            if (x == 2.6f)
+             float offset = 1.3f;
+            foreach (var instance in rubikCubes)
             {
-                modelMatrix = Matrix4X4.CreateScale(1.25f) * trans * rotationMatrix;
+                Matrix4X4<float> trans = Matrix4X4.CreateTranslation<float>(new Vector3D<float>(instance.Position.X, instance.Position.Y, instance.Position.Z));
+                Matrix4X4<float> modelMatrix = Matrix4X4.CreateScale(1.25f) * trans;
+
+                if (instance.Position.X == -offset )
+                {
+                    float angle = (float)(cubeArrangementModel.LeftFaceRotationAngle * Math.PI / 180f);
+                    Matrix4X4<float> rotationMatrix = Matrix4X4.CreateRotationX(angle);
+                    modelMatrix = Matrix4X4.CreateScale(1.25f) * trans * rotationMatrix;
+                }
+                else if (instance.Position.X == (2.6f - offset))
+                {
+                    float angle = (float)(cubeArrangementModel.RightFaceRotationAngle * Math.PI / 180f);
+                    Matrix4X4<float> rotationMatrix = Matrix4X4.CreateRotationX(angle);
+                    modelMatrix = Matrix4X4.CreateScale(1.25f) * trans * rotationMatrix;
+                }
+                if(instance.Position.Y == (2.6f - offset))
+                {
+                    float angle = (float)(cubeArrangementModel.TopFaceRotationAngle * Math.PI / 180f);
+                    Matrix4X4<float> rotationMatrix = Matrix4X4.CreateRotationY(angle);
+                    modelMatrix = Matrix4X4.CreateScale(1.25f) * trans * rotationMatrix;
+                }
+
+                SetModelMatrix(modelMatrix);
+                Gl.BindVertexArray(instance.Cube.Vao);
+                Gl.DrawElements(GLEnum.Triangles, instance.Cube.IndexArrayLength, GLEnum.UnsignedInt, null);
+                Gl.BindVertexArray(0);
             }
-            else
-            {
-                modelMatrix = Matrix4X4.CreateScale(1.25f) * trans;
             }
-            SetModelMatrix(modelMatrix);
-            Gl.BindVertexArray(glCubeRubic.Vao);
-            Gl.DrawElements(GLEnum.Triangles, glCubeRubic.IndexArrayLength, GLEnum.UnsignedInt, null);
-            Gl.BindVertexArray(0);
-        }
 
         private static unsafe void SetModelMatrix(Matrix4X4<float> modelMatrix)
         {
@@ -414,7 +472,7 @@ namespace Szeminarium1_24_02_17_2
         }*/
 
      
-        private static unsafe void SetUpObject(bool blue,bool green,bool red,bool cian, bool yellow, bool magenta)
+        private static unsafe GlCube SetUpObject(bool blue,bool green,bool red,bool cian, bool yellow, bool magenta)
         {
 
             float[] face1Color = [0f, 0f, 0f, 1f];
@@ -424,9 +482,9 @@ namespace Szeminarium1_24_02_17_2
             float[] face5Color = [0f, 0f, 0f, 1f];
             float[] face6Color = [0f, 0f, 0f, 1f];
             if (blue)
-           {
+            {
                  face1Color = [0.0f, 0.0f, 1.0f, 1.0f];
-           }
+            }
             if (green)
             {
                  face2Color = [0.0f, 1.0f, 0.0f, 1.0f];
@@ -452,7 +510,7 @@ namespace Szeminarium1_24_02_17_2
                 face6Color = [0.0f, 1.0f, 1.0f, 1.0f];
             }
 
-            glCubeRubic = GlCube.CreateCubeWithFaceColors(Gl, face1Color, face2Color, face3Color, face4Color, face5Color, face6Color);
+            return glCubeRubik = GlCube.CreateCubeWithFaceColors(Gl, face1Color, face2Color, face3Color, face4Color, face5Color, face6Color);
 
         }
 
@@ -462,7 +520,7 @@ namespace Szeminarium1_24_02_17_2
         {
             //glCubeCentered.ReleaseGlCube();
             //glCubeRotating.ReleaseGlCube();
-            glCubeRubic.ReleaseGlCube();
+            glCubeRubik.ReleaseGlCube();
         }
 
         private static unsafe void SetProjectionMatrix()

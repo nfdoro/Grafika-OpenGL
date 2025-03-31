@@ -28,7 +28,6 @@ namespace Szeminarium1_24_02_17_2
             this.IndexArrayLength = indexArrayLength;
             this.Gl = gl;
         }
-
         public static unsafe GlCube CreateCubeWithFaceColors(GL Gl, float[] face1Color, float[] face2Color, float[] face3Color, float[] face4Color, float[] face5Color, float[] face6Color)
         {
             uint vao = Gl.GenVertexArray();

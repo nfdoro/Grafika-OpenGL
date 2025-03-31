@@ -2,11 +2,20 @@
 {
     internal class CubeArrangementModel
     {
+        public double LeftFaceRotationAngle { get; set; } = 0;
         public double RightFaceRotationAngle { get; set; } = 0;
+        public double TopFaceRotationAngle { get; set; } = 0;
+
+        public double TargetLeftFaceRotationAngle { get; set; } = 0;
+        public double TargetRightFaceRotationAngle { get; set; } = 0;
+        public double TargetTopFaceRotationAngle { get; set; } = 0;
         /// <summary>
         /// Gets or sets wheather the animation should run or it should be frozen.
         /// </summary>
         public bool AnimationEnabeld { get; set; } = false;
+        public bool LeftAnimationEnabled { get; set; } = false;
+        public bool RightAnimationEnabled { get; set; } = false;
+        public bool TopAnimationEnabled { get; set; } = false;
 
         /// <summary>
         /// The time of the simulation. It helps to calculate time dependent values.
@@ -44,7 +53,42 @@
 
             DiamondCubeAngleRevolutionOnGlobalY = -Time;
 
-            RightFaceRotationAngle += 45.0 * deltaTime;
+
+            if (LeftAnimationEnabled && LeftFaceRotationAngle < TargetLeftFaceRotationAngle)
+            {
+                LeftFaceRotationAngle += 45.0 * deltaTime;
+                if (LeftFaceRotationAngle >= TargetLeftFaceRotationAngle)
+                {
+                    LeftFaceRotationAngle = TargetLeftFaceRotationAngle;
+                    LeftAnimationEnabled = false;
+                }
+            }
+
+            if (RightAnimationEnabled && RightFaceRotationAngle < TargetRightFaceRotationAngle)
+            {
+                RightFaceRotationAngle += 45.0 * deltaTime;
+                if (RightFaceRotationAngle >= TargetRightFaceRotationAngle)
+                {
+                    RightFaceRotationAngle = TargetRightFaceRotationAngle;
+                    RightAnimationEnabled = false;
+                }
+            }
+
+            if (TopAnimationEnabled && TopFaceRotationAngle < TargetTopFaceRotationAngle)
+            {
+                TopFaceRotationAngle += 45.0 * deltaTime;
+                if (TopFaceRotationAngle >= TargetTopFaceRotationAngle)
+                {
+                    TopFaceRotationAngle = TargetTopFaceRotationAngle;
+                    TopAnimationEnabled = false;
+                }
+            }
+
+            if (LeftFaceRotationAngle == TargetLeftFaceRotationAngle &&
+      RightFaceRotationAngle == TargetRightFaceRotationAngle && TopFaceRotationAngle == TargetTopFaceRotationAngle)
+            {
+                AnimationEnabeld = false;
+            }
         }
     }
 }
