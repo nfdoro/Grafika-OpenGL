@@ -11,7 +11,8 @@ namespace Szeminarium1_24_02_17_2
         class CubeInstance
         {
             public GlCube Cube { get; set; }
-            public Vector3 Position { get; set; }
+            public Vector3D<float> Position { get; set; }
+            public Vector3D<float> ChekerPosition { get; set; }
         }
 
         private static List<CubeInstance> rubikCubes = new List<CubeInstance>();
@@ -239,29 +240,9 @@ namespace Szeminarium1_24_02_17_2
             SetViewMatrix();
             SetProjectionMatrix();
 
-            //DrawPulsingCenterCube();
-            //DrawRevolvingCube();
-
             DrawRubikCenterCube();
 
         }
-        /*
-        private static unsafe void DrawRevolvingCube()
-        {
-            Matrix4X4<float> diamondScale = Matrix4X4.CreateScale(0.25f);
-            Matrix4X4<float> rotx = Matrix4X4.CreateRotationX((float)Math.PI / 4f);
-            Matrix4X4<float> rotz = Matrix4X4.CreateRotationZ((float)Math.PI / 4f);
-            Matrix4X4<float> rotLocY = Matrix4X4.CreateRotationY((float)cubeArrangementModel.DiamondCubeAngleOwnRevolution);
-            Matrix4X4<float> trans = Matrix4X4.CreateTranslation(1f, 1f, 0f);
-            Matrix4X4<float> rotGlobY = Matrix4X4.CreateRotationY((float)cubeArrangementModel.DiamondCubeAngleRevolutionOnGlobalY);
-            Matrix4X4<float> modelMatrix = diamondScale * rotx * rotz * rotLocY * trans * rotGlobY;
-
-            SetModelMatrix(modelMatrix);
-            Gl.BindVertexArray(glCubeRotating.Vao);
-            Gl.DrawElements(GLEnum.Triangles, glCubeRotating.IndexArrayLength, GLEnum.UnsignedInt, null);
-            Gl.BindVertexArray(0);
-        }
-        */
 
 
         public static unsafe void InitRubikCube()
@@ -396,7 +377,7 @@ namespace Szeminarium1_24_02_17_2
                         }
 
 
-                        rubikCubes.Add(new CubeInstance { Cube = cube, Position = new Vector3(i - offset, j - offset, k - offset) });
+                        rubikCubes.Add(new CubeInstance { Cube = cube, Position = new Vector3D<float>(i - offset, j - offset, k - offset)});
                         
                     }
                 }
@@ -409,24 +390,34 @@ namespace Szeminarium1_24_02_17_2
             {
                 Matrix4X4<float> trans = Matrix4X4.CreateTranslation<float>(new Vector3D<float>(instance.Position.X, instance.Position.Y, instance.Position.Z));
                 Matrix4X4<float> modelMatrix = Matrix4X4.CreateScale(1.25f) * trans;
+                Matrix4X4<float> scale = Matrix4X4.CreateScale(1.25f);
+                Matrix4X4<float> rotationMatrix = Matrix4X4<float>.Identity;
 
-                if (instance.Position.X == -offset )
+
+                instance.ChekerPosition = instance.Position;
+                if (instance.ChekerPosition.X == -offset )
                 {
                     float angle = (float)(cubeArrangementModel.LeftFaceRotationAngle * Math.PI / 180f);
-                    Matrix4X4<float> rotationMatrix = Matrix4X4.CreateRotationX(angle);
-                    modelMatrix = Matrix4X4.CreateScale(1.25f) * trans * rotationMatrix;
+                    rotationMatrix *= Matrix4X4.CreateRotationX(angle);
+                    instance.ChekerPosition = Vector3D.Transform(instance.Position, rotationMatrix);
+
+                    modelMatrix = scale * trans * rotationMatrix;
                 }
-                else if (instance.Position.X == (2.6f - offset))
+                if (instance.ChekerPosition.X == (2.6f - offset))
                 {
                     float angle = (float)(cubeArrangementModel.RightFaceRotationAngle * Math.PI / 180f);
-                    Matrix4X4<float> rotationMatrix = Matrix4X4.CreateRotationX(angle);
-                    modelMatrix = Matrix4X4.CreateScale(1.25f) * trans * rotationMatrix;
+                    rotationMatrix *= Matrix4X4.CreateRotationX(angle);
+                    instance.ChekerPosition = Vector3D.Transform(instance.Position, rotationMatrix);
+
+                    modelMatrix = scale * trans * rotationMatrix;
                 }
-                if(instance.Position.Y == (2.6f - offset))
+                if(instance.ChekerPosition.Y == (2.6f - offset))
                 {
                     float angle = (float)(cubeArrangementModel.TopFaceRotationAngle * Math.PI / 180f);
-                    Matrix4X4<float> rotationMatrix = Matrix4X4.CreateRotationY(angle);
-                    modelMatrix = Matrix4X4.CreateScale(1.25f) * trans * rotationMatrix;
+                    rotationMatrix *= Matrix4X4.CreateRotationY(angle);
+                    instance.ChekerPosition = Vector3D.Transform(instance.Position, rotationMatrix);
+
+                    modelMatrix = scale * trans * rotationMatrix;
                 }
 
                 SetModelMatrix(modelMatrix);
@@ -434,7 +425,7 @@ namespace Szeminarium1_24_02_17_2
                 Gl.DrawElements(GLEnum.Triangles, instance.Cube.IndexArrayLength, GLEnum.UnsignedInt, null);
                 Gl.BindVertexArray(0);
             }
-            }
+        }
 
         private static unsafe void SetModelMatrix(Matrix4X4<float> modelMatrix)
         {
