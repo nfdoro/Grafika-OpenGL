@@ -91,7 +91,7 @@ namespace GrafikaSzeminarium
             float[] normal = new float[] { 0f, 0f, 1f };
             panel = PanelModelDescriptor.Create(Gl,normal,normal);
 
-            float normalOffset = MathF.PI / 18f; // 10 fok radiánban
+            float normalOffset = MathF.PI / 18f; // 10 fok radianba
 
             // bal oldal
             float[] normalLeft = new float[]
