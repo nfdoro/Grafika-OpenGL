@@ -34,7 +34,6 @@ namespace GrafikaSzeminarium
         private const string ViewPositionVariableName = "uViewPos";
 
         private const string ShinenessVariableName = "uShininess";
-
         private const string AmbientVariableName = "uAmbientStrength";
         private const string DiffuseVariableName = "uDiffuseStrength";
         private const string SpecularVariableName = "uSpecularStrength";
@@ -44,8 +43,8 @@ namespace GrafikaSzeminarium
         private static float diffuse = 0.3f;
         private static float specular = 0.6f;
 
-        private static float red = 0.0f;
-        private static float green = 0.0f;
+        private static float red = 1.0f;
+        private static float green = 1.0f;
         private static float blue = 1.0f;
 
         private static float[] colorTopFace= {1.0f, 0.0f, 0.0f, 1.0f, };
@@ -60,7 +59,7 @@ namespace GrafikaSzeminarium
             new Vector4(1f, 0f, 0f, 1f), // red
             new Vector4(1f, 1f, 0f, 1f), // yellow
             new Vector4(1f, 0f, 1f, 1f), // magenta
-            new Vector4(0f, 1f, 1f, 1f)  // cian
+            new Vector4(0f, 1f, 1f, 1f)  // cyan
         };
         private static uint program;
 
@@ -109,8 +108,9 @@ namespace GrafikaSzeminarium
 
             cube = ModelObjectDescriptor.CreateCube(Gl,colorTopFace);
 
-            Gl.ClearColor(System.Drawing.Color.White);
-            
+
+            Gl.ClearColor(red, green, blue, 1.0f);
+
             Gl.Enable(EnableCap.CullFace);
             Gl.CullFace(TriangleFace.Back);
 
@@ -207,11 +207,11 @@ namespace GrafikaSzeminarium
         {
             Gl.Clear(ClearBufferMask.ColorBufferBit);
             Gl.Clear(ClearBufferMask.DepthBufferBit);
-
+            Gl.ClearColor(red, green, blue, 1.0f);
             Gl.UseProgram(program);
 
 
-            SetUniform3(LightColorVariableName, new Vector3(red, green, blue));
+            SetUniform3(LightColorVariableName, new Vector3(1.0f, 1.0f, 1.0f));
             SetUniform3(LightPositionVariableName, new Vector3(0f, 1.2f, 0f));
             SetUniform3(ViewPositionVariableName, new Vector3(camera.Position.X, camera.Position.Y, camera.Position.Z));
             
@@ -249,7 +249,7 @@ namespace GrafikaSzeminarium
             ImGuiNET.ImGui.SliderFloat("Specular", ref specular, 0, 1);
             ImGuiNET.ImGui.End();
 
-            ImGuiNET.ImGui.Begin("LightingColor", ImGuiNET.ImGuiWindowFlags.AlwaysAutoResize | ImGuiNET.ImGuiWindowFlags.NoCollapse);
+            ImGuiNET.ImGui.Begin("BackgroundColor", ImGuiNET.ImGuiWindowFlags.AlwaysAutoResize | ImGuiNET.ImGuiWindowFlags.NoCollapse);
             ImGuiNET.ImGui.SliderFloat("Red", ref red, 0, 1);
             ImGuiNET.ImGui.SliderFloat("Green", ref green, 0, 1);
             ImGuiNET.ImGui.SliderFloat("Blue", ref blue, 0, 1);
