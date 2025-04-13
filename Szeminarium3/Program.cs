@@ -110,7 +110,7 @@ namespace GrafikaSzeminarium
             };
 
 
-            customPanel = PanelModelDescriptor.Create(Gl, normalRight, normalLeft);
+            customPanel = PanelModelDescriptor.Create(Gl, normalLeft, normalRight);
             Gl.ClearColor(System.Drawing.Color.White);
 
 

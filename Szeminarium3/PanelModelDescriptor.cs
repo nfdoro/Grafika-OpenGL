@@ -26,8 +26,6 @@ namespace GrafikaSzeminarium
 
             float[] vertexArray = new float[]
             {
-            
-    
                     // Position             // Normal
                     -0.5f, -1f, 0f,         normal1[0], normal1[1], normal1[2], // Bal also
                      0.5f, -1f, 0f,         normal2[0], normal2[1], normal2[2], // Jobb also
@@ -37,10 +35,10 @@ namespace GrafikaSzeminarium
             };
 
             float[] colorArray = new float[] {
-                1.0f, 0.0f, 0.0f, 1.0f,
-                1.0f, 0.0f, 0.0f, 1.0f,
-                1.0f, 0.0f, 0.0f, 1.0f,
-                1.0f, 0.0f, 0.0f, 1.0f,
+                0.0f, 1.0f, 1.0f, 1.0f,
+                0.0f, 1.0f, 1.0f, 1.0f,
+                0.0f, 1.0f, 1.0f, 1.0f,
+                0.0f, 1.0f, 1.0f, 1.0f,
             };
 
             uint[] indexArray = new uint[]
