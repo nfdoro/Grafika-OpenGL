@@ -9,17 +9,18 @@ using System.Threading.Tasks;
 
 namespace Szeminarium1_24_02_17_2
 {
-    internal class GlCube
+    internal class GlCube:IDisposable
     {
-        public uint Vao { get; }
-        public uint Vertices { get; }
-        public uint Colors { get; }
-        public uint Indices { get; }
-        public uint IndexArrayLength { get; }
+        private bool disposedValue;
+        public uint Vao { get; private set; }
+        public uint Vertices { get; private set; }
+        public uint Colors { get; private set; }
+        public uint Indices { get; private set; }
+        public uint IndexArrayLength { get; private set; }
 
         private GL Gl;
 
-        private GlCube(uint vao, uint vertices, uint colors, uint indeces, uint indexArrayLength, GL gl)
+        /*private GlCube(uint vao, uint vertices, uint colors, uint indeces, uint indexArrayLength, GL gl)
         {
             this.Vao = vao;
             this.Vertices = vertices;
@@ -27,7 +28,7 @@ namespace Szeminarium1_24_02_17_2
             this.Indices = indeces;
             this.IndexArrayLength = indexArrayLength;
             this.Gl = gl;
-        }
+        }*/
         public static unsafe GlCube CreateCubeWithFaceColors(GL Gl, float[] face1Color, float[] face2Color, float[] face3Color, float[] face4Color, float[] face5Color, float[] face6Color)
         {
             uint vao = Gl.GenVertexArray();
@@ -35,35 +36,41 @@ namespace Szeminarium1_24_02_17_2
 
             // counter clockwise is front facing
             float[] vertexArray = new float[] {
-                -0.5f, 0.5f, 0.5f,
-                0.5f, 0.5f, 0.5f,
-                0.5f, 0.5f, -0.5f,
-                -0.5f, 0.5f, -0.5f,
+                // Top face (Y+)
+                -0.5f, 0.5f, 0.5f,    0f, 1f, 0f,
+                 0.5f, 0.5f, 0.5f,    0f, 1f, 0f,
+                 0.5f, 0.5f, -0.5f,   0f, 1f, 0f,
+                -0.5f, 0.5f, -0.5f,   0f, 1f, 0f,
 
-                -0.5f, 0.5f, 0.5f,
-                -0.5f, -0.5f, 0.5f,
-                0.5f, -0.5f, 0.5f,
-                0.5f, 0.5f, 0.5f,
+                // Front face (Z+)
+                -0.5f, 0.5f, 0.5f,    0f, 0f, 1f,
+                -0.5f, -0.5f, 0.5f,   0f, 0f, 1f,
+                 0.5f, -0.5f, 0.5f,   0f, 0f, 1f,
+                 0.5f, 0.5f, 0.5f,    0f, 0f, 1f,
 
-                -0.5f, 0.5f, 0.5f,
-                -0.5f, 0.5f, -0.5f,
-                -0.5f, -0.5f, -0.5f,
-                -0.5f, -0.5f, 0.5f,
+                // Left face (X-)
+                -0.5f, 0.5f, 0.5f,    -1f, 0f, 0f,
+                -0.5f, 0.5f, -0.5f,   -1f, 0f, 0f,
+                -0.5f, -0.5f, -0.5f,  -1f, 0f, 0f,
+                -0.5f, -0.5f, 0.5f,   -1f, 0f, 0f,
 
-                -0.5f, -0.5f, 0.5f,
-                0.5f, -0.5f, 0.5f,
-                0.5f, -0.5f, -0.5f,
-                -0.5f, -0.5f, -0.5f,
+                // Bottom face (Y-)
+                -0.5f, -0.5f, 0.5f,   0f, -1f, 0f,
+                 0.5f, -0.5f, 0.5f,   0f, -1f, 0f,
+                 0.5f, -0.5f, -0.5f,  0f, -1f, 0f,
+                -0.5f, -0.5f, -0.5f,  0f, -1f, 0f,
 
-                0.5f, 0.5f, -0.5f,
-                -0.5f, 0.5f, -0.5f,
-                -0.5f, -0.5f, -0.5f,
-                0.5f, -0.5f, -0.5f,
+                // Back face (Z-)
+                 0.5f, 0.5f, -0.5f,   0f, 0f, -1f,
+                -0.5f, 0.5f, -0.5f,   0f, 0f, -1f,
+                -0.5f, -0.5f, -0.5f,  0f, 0f, -1f,
+                 0.5f, -0.5f, -0.5f,  0f, 0f, -1f,
 
-                0.5f, 0.5f, 0.5f,
-                0.5f, 0.5f, -0.5f,
-                0.5f, -0.5f, -0.5f,
-                0.5f, -0.5f, 0.5f,
+                // Right face (X+)
+                 0.5f, 0.5f, 0.5f,    1f, 0f, 0f,
+                 0.5f, 0.5f, -0.5f,   1f, 0f, 0f,
+                 0.5f, -0.5f, -0.5f,  1f, 0f, 0f,
+                 0.5f, -0.5f, 0.5f,   1f, 0f, 0f,
 
             };
 
@@ -124,8 +131,13 @@ namespace Szeminarium1_24_02_17_2
             uint vertices = Gl.GenBuffer();
             Gl.BindBuffer(GLEnum.ArrayBuffer, vertices);
             Gl.BufferData(GLEnum.ArrayBuffer, (ReadOnlySpan<float>)vertexArray.AsSpan(), GLEnum.StaticDraw);
-            Gl.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 0, null);
+            uint offsetPos = 0;
+            uint offsetNormals = offsetPos + 3 * sizeof(float);
+            uint vertexSize = offsetNormals + 3 * sizeof(float);
+            Gl.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, vertexSize, (void*)offsetPos);
             Gl.EnableVertexAttribArray(0);
+            Gl.VertexAttribPointer(2, 3, VertexAttribPointerType.Float, true, vertexSize, (void*)offsetNormals);
+            Gl.EnableVertexAttribArray(2);
 
             uint colors = Gl.GenBuffer();
             Gl.BindBuffer(GLEnum.ArrayBuffer, colors);
@@ -137,20 +149,58 @@ namespace Szeminarium1_24_02_17_2
             Gl.BindBuffer(GLEnum.ElementArrayBuffer, indices);
             Gl.BufferData(GLEnum.ElementArrayBuffer, (ReadOnlySpan<uint>)indexArray.AsSpan(), GLEnum.StaticDraw);
 
-            // release array buffer
+
+            Gl.BindVertexArray(0);
             Gl.BindBuffer(GLEnum.ArrayBuffer, 0);
-            uint indexArrayLength = (uint)indexArray.Length;
+            Gl.BindBuffer(GLEnum.ElementArrayBuffer, 0);
 
-            return new GlCube(vao, vertices, colors, indices, indexArrayLength, Gl);
+            return new GlCube()
+            {
+                Vao = vao,
+                Vertices = vertices,
+                Colors = colors,
+                Indices = indices,
+                IndexArrayLength = (uint)indexArray.Length,
+                Gl = Gl
+            };
+
         }
 
-        internal void ReleaseGlCube()
+        protected virtual void Dispose(bool disposing)
         {
-            // always unbound the vertex buffer first, so no halfway results are displayed by accident
-            Gl.DeleteBuffer(Vertices);
-            Gl.DeleteBuffer(Colors);
-            Gl.DeleteBuffer(Indices);
-            Gl.DeleteVertexArray(Vao);
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects)
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+
+
+                // always unbound the vertex buffer first, so no halfway results are displayed by accident
+                Gl.DeleteBuffer(Vertices);
+                Gl.DeleteBuffer(Colors);
+                Gl.DeleteBuffer(Indices);
+                Gl.DeleteVertexArray(Vao);
+
+                disposedValue = true;
+            }
         }
+        ~GlCube()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: false);
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+
     }
 }

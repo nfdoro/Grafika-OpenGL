@@ -1,8 +1,11 @@
 ﻿using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
+using Silk.NET.OpenGL.Extensions.ImGui;
 using Silk.NET.Windowing;
+using System.Dynamic;
 using System.Numerics;
+using System.Reflection;
 using System.Transactions;
 
 namespace Szeminarium1_24_02_17_2
@@ -26,6 +29,7 @@ namespace Szeminarium1_24_02_17_2
         private static IWindow window;
 
         private static GL Gl;
+        private static ImGuiController imGuiController;
         private static float faceToRotate;
 
         private static uint program;
@@ -42,43 +46,41 @@ namespace Szeminarium1_24_02_17_2
         private const string ModelMatrixVariableName = "uModel";
         private const string ViewMatrixVariableName = "uView";
         private const string ProjectionMatrixVariableName = "uProjection";
-
-        private static readonly string VertexShaderSource = @"
-        #version 330 core
-        layout (location = 0) in vec3 vPos;
-		layout (location = 1) in vec4 vCol;
-
-        uniform mat4 uModel;
-        uniform mat4 uView;
-        uniform mat4 uProjection;
-
-		out vec4 outCol;
-        
-        void main()
-        {
-			outCol = vCol;
-            gl_Position = uProjection*uView*uModel*vec4(vPos.x, vPos.y, vPos.z, 1.0);
-        }
-        ";
+        private const string NormalMatrixVariableName = "uNormal";
 
 
-        private static readonly string FragmentShaderSource = @"
-        #version 330 core
-        out vec4 FragColor;
+        private const string ShinenessVariableName = "uShininess";
+        private const string AmbientVariableName = "uAmbientStrength";
+        private const string DiffuseVariableName = "uDiffuseStrength";
+        private const string SpecularVariableName = "uSpecularStrength";
 
-		in vec4 outCol;
+        private const string LightColorVariableName = "uLightColor";
+        private const string LightPositionVariableName = "uLightPos";
+        private const string ViewPositionVariableName = "uViewPos";
 
-        void main()
-        {
-            FragColor = outCol;
-        }
-        ";
+        private static float shininess = 50;
+        private static float ambient = 0.1f;
+        private static float diffuse = 0.3f;
+        private static float specular = 0.6f;
+
+        private static float red = 1.0f;
+        private static float green = 1.0f;
+        private static float blue = 1.0f;
+
+        private static float lightX = 0f;
+        private static float lightY = 1.2f;
+        private static float lightZ = 0f;
+
+        private static float lightXInput = lightX;
+        private static float lightYInput = lightY;
+        private static float lightZInput = lightZ;
+
 
         static void Main(string[] args)
         {
             WindowOptions windowOptions = WindowOptions.Default;
             windowOptions.Title = "2 szeminárium";
-            windowOptions.Size = new Vector2D<int>(500, 500);
+            windowOptions.Size = new Vector2D<int>(800, 800);
 
             // on some systems there is no depth buffer by default, so we need to make sure one is created
             windowOptions.PreferredDepthBufferBits = 24;
@@ -106,6 +108,8 @@ namespace Szeminarium1_24_02_17_2
             }
 
             Gl = window.CreateOpenGL();
+
+            imGuiController = new ImGuiController(Gl, window, inputContext);
             Gl.ClearColor(System.Drawing.Color.White);
 
             LinkProgram();
@@ -123,14 +127,19 @@ namespace Szeminarium1_24_02_17_2
             uint vshader = Gl.CreateShader(ShaderType.VertexShader);
             uint fshader = Gl.CreateShader(ShaderType.FragmentShader);
 
-            Gl.ShaderSource(vshader, VertexShaderSource);
+
+            Gl.ShaderSource(vshader, GetEmbeddedResourceAsString("Shaders.VertexShader.vert"));
             Gl.CompileShader(vshader);
             Gl.GetShader(vshader, ShaderParameterName.CompileStatus, out int vStatus);
             if (vStatus != (int)GLEnum.True)
                 throw new Exception("Vertex shader failed to compile: " + Gl.GetShaderInfoLog(vshader));
 
-            Gl.ShaderSource(fshader, FragmentShaderSource);
+            Gl.ShaderSource(fshader, GetEmbeddedResourceAsString("Shaders.FragmentShader.frag"));
             Gl.CompileShader(fshader);
+            Gl.GetShader(fshader, ShaderParameterName.CompileStatus, out int fStatus);
+            if (fStatus != (int)GLEnum.True)
+                throw new Exception("Fragment shader failed to compile: " + Gl.GetShaderInfoLog(fshader));
+
 
             program = Gl.CreateProgram();
             Gl.AttachShader(program, vshader);
@@ -185,59 +194,6 @@ namespace Szeminarium1_24_02_17_2
                 case Key.Down:
                     cameraDescriptor.PitchDown();
                     break;
-
-                case Key.Keypad4:
-                    if (!cubeArrangementModel.AnimationEnabeld)
-                    {
-                        cubeArrangementModel.LeftAnimationEnabled = true;
-                        cubeArrangementModel.TargetLeftFaceRotationAngle = cubeArrangementModel.LeftFaceRotationAngle + 90;
-                        cubeArrangementModel.AnimationEnabeld = true;
-                    }
-                    break;
-
-                case Key.Keypad6:
-                    if (!cubeArrangementModel.AnimationEnabeld)
-                    {
-                        cubeArrangementModel.RightAnimationEnabled = true;
-                        cubeArrangementModel.TargetRightFaceRotationAngle = cubeArrangementModel.RightFaceRotationAngle + 90;
-                        cubeArrangementModel.AnimationEnabeld = true;
-                    }
-                    break;
-                case Key.Keypad8:
-                    if (!cubeArrangementModel.AnimationEnabeld)
-                    {
-                        cubeArrangementModel.TopAnimationEnabled = true;
-                        cubeArrangementModel.TargetTopFaceRotationAngle = cubeArrangementModel.TopFaceRotationAngle + 90;
-                        cubeArrangementModel.AnimationEnabeld = true;
-                    }
-                    break;
-
-                case Key.Keypad2: 
-                    if (!cubeArrangementModel.AnimationEnabeld)
-                    {
-                        cubeArrangementModel.BottomAnimationEnabled = true;
-                        cubeArrangementModel.TargetBottomFaceRotationAngle = cubeArrangementModel.BottomFaceRotationAngle + 90;
-                        cubeArrangementModel.AnimationEnabeld = true;
-                    }
-                    break;
-
-                case Key.Keypad7: 
-                    if (!cubeArrangementModel.AnimationEnabeld)
-                    {
-                        cubeArrangementModel.FrontAnimationEnabled = true;
-                        cubeArrangementModel.TargetFrontFaceRotationAngle = cubeArrangementModel.FrontFaceRotationAngle + 90;
-                        cubeArrangementModel.AnimationEnabeld = true;
-                    }
-                    break;
-
-                case Key.Keypad9:
-                    if (!cubeArrangementModel.AnimationEnabeld)
-                    {
-                        cubeArrangementModel.BackAnimationEnabled = true;
-                        cubeArrangementModel.TargetBackFaceRotationAngle = cubeArrangementModel.BackFaceRotationAngle + 90;
-                        cubeArrangementModel.AnimationEnabeld = true;
-                    }
-                    break;
                 case Key.Space:
                    
                     //cubeArrangementModel.AnimationEnabeld = !cubeArrangementModel.AnimationEnabeld;
@@ -252,7 +208,9 @@ namespace Szeminarium1_24_02_17_2
             // multithreaded
             // make sure it is threadsafe
             // NO GL calls
-            cubeArrangementModel.AdvanceTime(deltaTime);        }
+            cubeArrangementModel.AdvanceTime(deltaTime);
+            imGuiController.Update((float)deltaTime);
+        }
 
         private static unsafe void Window_Render(double deltaTime)
         {
@@ -265,11 +223,138 @@ namespace Szeminarium1_24_02_17_2
 
             Gl.UseProgram(program);
 
+            SetUniform3(LightColorVariableName, new Vector3(red, green, blue));
+            SetUniform3(LightPositionVariableName, new Vector3(lightX, lightY, lightZ));
+            SetUniform3(ViewPositionVariableName, new Vector3(cameraDescriptor.Position.X, cameraDescriptor.Position.Y, cameraDescriptor.Position.Z));
+
+            SetUniform1(ShinenessVariableName, shininess);
+            SetUniform1(AmbientVariableName, ambient);
+            SetUniform1(DiffuseVariableName, diffuse);
+            SetUniform1(SpecularVariableName, specular);
+
+
             SetViewMatrix();
             SetProjectionMatrix();
 
             DrawRubikCenterCube();
 
+            ImGuiNET.ImGui.Begin("Lighting", ImGuiNET.ImGuiWindowFlags.AlwaysAutoResize | ImGuiNET.ImGuiWindowFlags.NoCollapse);
+            ImGuiNET.ImGui.SliderFloat("Shininess", ref shininess, 5, 100);
+            ImGuiNET.ImGui.SliderFloat("Ambient", ref ambient, 0, 1);
+            ImGuiNET.ImGui.SliderFloat("Diffuse", ref diffuse, 0, 1);
+            ImGuiNET.ImGui.SliderFloat("Specular", ref specular, 0, 1);
+            ImGuiNET.ImGui.End();
+
+            ImGuiNET.ImGui.Begin("LightingColor", ImGuiNET.ImGuiWindowFlags.AlwaysAutoResize | ImGuiNET.ImGuiWindowFlags.NoCollapse);
+            ImGuiNET.ImGui.SliderFloat("Red", ref red, 0, 1);
+            ImGuiNET.ImGui.SliderFloat("Green", ref green, 0, 1);
+            ImGuiNET.ImGui.SliderFloat("Blue", ref blue, 0, 1);
+            ImGuiNET.ImGui.End();
+
+            ImGuiNET.ImGui.Begin("LightPositon", ImGuiNET.ImGuiWindowFlags.AlwaysAutoResize);
+
+            ImGuiNET.ImGui.InputFloat("Light X", ref lightXInput);
+            ImGuiNET.ImGui.InputFloat("Light Y", ref lightYInput);
+            ImGuiNET.ImGui.InputFloat("Light Z", ref lightZInput);
+
+            if (ImGuiNET.ImGui.Button("Apply"))
+            {
+                lightX = lightXInput;
+                lightY = lightYInput;
+                lightZ = lightZInput;
+            }
+            ImGuiNET.ImGui.End();
+
+            ImGuiNET.ImGui.Begin("Rubik Cube Rotation", ImGuiNET.ImGuiWindowFlags.AlwaysAutoResize);
+
+            if (ImGuiNET.ImGui.Button("Left"))
+            {
+                if (!cubeArrangementModel.AnimationEnabeld)
+                {
+                    cubeArrangementModel.LeftAnimationEnabled = true;
+                    cubeArrangementModel.TargetLeftFaceRotationAngle = cubeArrangementModel.LeftFaceRotationAngle + 90;
+                    cubeArrangementModel.AnimationEnabeld = true;
+                }
+            }
+
+            if (ImGuiNET.ImGui.Button("Right"))
+            {
+                if (!cubeArrangementModel.AnimationEnabeld)
+                {
+                    cubeArrangementModel.RightAnimationEnabled = true;
+                    cubeArrangementModel.TargetRightFaceRotationAngle = cubeArrangementModel.RightFaceRotationAngle + 90;
+                    cubeArrangementModel.AnimationEnabeld = true;
+                }
+            }
+
+            if (ImGuiNET.ImGui.Button("Top"))
+            {
+                if (!cubeArrangementModel.AnimationEnabeld)
+                {
+                    cubeArrangementModel.TopAnimationEnabled = true;
+                    cubeArrangementModel.TargetTopFaceRotationAngle = cubeArrangementModel.TopFaceRotationAngle + 90;
+                    cubeArrangementModel.AnimationEnabeld = true;
+                }
+            }
+
+            if (ImGuiNET.ImGui.Button("Bottom"))
+            {
+                if (!cubeArrangementModel.AnimationEnabeld)
+                {
+                    cubeArrangementModel.BottomAnimationEnabled = true;
+                    cubeArrangementModel.TargetBottomFaceRotationAngle = cubeArrangementModel.BottomFaceRotationAngle + 90;
+                    cubeArrangementModel.AnimationEnabeld = true;
+                }
+            }
+
+            if (ImGuiNET.ImGui.Button("Front"))
+            {
+                if (!cubeArrangementModel.AnimationEnabeld)
+                {
+                    cubeArrangementModel.FrontAnimationEnabled = true;
+                    cubeArrangementModel.TargetFrontFaceRotationAngle = cubeArrangementModel.FrontFaceRotationAngle + 90;
+                    cubeArrangementModel.AnimationEnabeld = true;
+                }
+            }
+
+            if (ImGuiNET.ImGui.Button("Back"))
+            {
+                if (!cubeArrangementModel.AnimationEnabeld)
+                {
+                    cubeArrangementModel.BackAnimationEnabled = true;
+                    cubeArrangementModel.TargetBackFaceRotationAngle = cubeArrangementModel.BackFaceRotationAngle + 90;
+                    cubeArrangementModel.AnimationEnabeld = true;
+                }
+            }
+
+            ImGuiNET.ImGui.End();
+
+            imGuiController.Render();
+
+        }
+
+        private static unsafe void SetUniform1(string uniformName, float uniformValue)
+        {
+            int location = Gl.GetUniformLocation(program, uniformName);
+            if (location == -1)
+            {
+                throw new Exception($"{uniformName} uniform not found on shader.");
+            }
+
+            Gl.Uniform1(location, uniformValue);
+            CheckError();
+        }
+
+        private static unsafe void SetUniform3(string uniformName, Vector3 uniformValue)
+        {
+            int location = Gl.GetUniformLocation(program, uniformName);
+            if (location == -1)
+            {
+                throw new Exception($"{uniformName} uniform not found on shader.");
+            }
+
+            Gl.Uniform3(location, uniformValue);
+            CheckError();
         }
 
 
@@ -548,7 +633,7 @@ namespace Szeminarium1_24_02_17_2
         {
             //glCubeCentered.ReleaseGlCube();
             //glCubeRotating.ReleaseGlCube();
-            glCubeRubik.ReleaseGlCube();
+            glCubeRubik.Dispose();
         }
 
         private static unsafe void SetProjectionMatrix()
@@ -585,6 +670,18 @@ namespace Szeminarium1_24_02_17_2
             var error = (ErrorCode)Gl.GetError();
             if (error != ErrorCode.NoError)
                 throw new Exception("GL.GetError() returned " + error.ToString());
+        }
+
+        private static string GetEmbeddedResourceAsString(string resourceRelativePath)
+        {
+            string resourceFullPath = Assembly.GetExecutingAssembly().GetName().Name + "." + resourceRelativePath;
+
+            using (var resStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceFullPath))
+            using (var resStreamReader = new StreamReader(resStream))
+            {
+                var text = resStreamReader.ReadToEnd();
+                return text;
+            }
         }
     }
 }
