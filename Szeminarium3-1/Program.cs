@@ -4,6 +4,7 @@ using Silk.NET.OpenGL;
 using Silk.NET.OpenGL.Extensions.ImGui;
 using Silk.NET.Windowing;
 using System.Dynamic;
+using System.Net.NetworkInformation;
 using System.Numerics;
 using System.Reflection;
 using Szeminarium;
@@ -40,7 +41,10 @@ namespace GrafikaSzeminarium
 
         private static float shininess = 50;
 
+        private static uint phongProgram;
+        private static uint gourardProgram;
         private static uint program;
+        private static bool usePhong = true;
 
         static void Main(string[] args)
         {
@@ -63,7 +67,8 @@ namespace GrafikaSzeminarium
             cube.Dispose();
             panel.Dispose();
             customPanel.Dispose();
-            Gl.DeleteProgram(program);
+            Gl.DeleteProgram(phongProgram);
+            Gl.DeleteProgram(gourardProgram);
         }
 
         private static void GraphicWindow_Load()
@@ -122,17 +127,23 @@ namespace GrafikaSzeminarium
             Gl.Enable(EnableCap.DepthTest);
             Gl.DepthFunc(DepthFunction.Lequal);
 
+            phongProgram = LoadShader("Shaders.VertexShader.vert", "Shaders.FragmentShader.frag");
+            gourardProgram = LoadShader("Shaders.VertexShaderGourard.vert", "Shaders.FragmentShaderGourard.frag");
+            program = phongProgram;
+        }
 
+        private static uint LoadShader(string vertexPath, string fragmentPath)
+        {
             uint vshader = Gl.CreateShader(ShaderType.VertexShader);
             uint fshader = Gl.CreateShader(ShaderType.FragmentShader);
 
-            Gl.ShaderSource(vshader, GetEmbeddedResourceAsString("Shaders.VertexShader.vert"));
+            Gl.ShaderSource(vshader, GetEmbeddedResourceAsString(vertexPath));
             Gl.CompileShader(vshader);
             Gl.GetShader(vshader, ShaderParameterName.CompileStatus, out int vStatus);
             if (vStatus != (int)GLEnum.True)
                 throw new Exception("Vertex shader failed to compile: " + Gl.GetShaderInfoLog(vshader));
 
-            Gl.ShaderSource(fshader, GetEmbeddedResourceAsString("Shaders.FragmentShader.frag"));
+            Gl.ShaderSource(fshader, GetEmbeddedResourceAsString(fragmentPath));
             Gl.CompileShader(fshader);
             Gl.GetShader(fshader, ShaderParameterName.CompileStatus, out int fStatus);
             if (fStatus != (int)GLEnum.True)
@@ -147,16 +158,13 @@ namespace GrafikaSzeminarium
             Gl.DetachShader(program, fshader);
             Gl.DeleteShader(vshader);
             Gl.DeleteShader(fshader);
-            if ((ErrorCode)Gl.GetError() != ErrorCode.NoError)
-            {
-
-            }
 
             Gl.GetProgram(program, GLEnum.LinkStatus, out var status);
             if (status == 0)
             {
                 Console.WriteLine($"Error linking shader {Gl.GetProgramInfoLog(program)}");
             }
+            return program;
         }
 
         private static string GetEmbeddedResourceAsString(string resourceRelativePath)
@@ -217,7 +225,6 @@ namespace GrafikaSzeminarium
 
             float offsetBetweenBarrels = 3f;
 
-            float normalOffset = 10f * MathF.PI / 180f;
 
             for (int i = 0; i < count; i++)
             {
@@ -233,7 +240,7 @@ namespace GrafikaSzeminarium
                 //bal hordo
                 SetModelMatrix(scale * rotationY * translationLeft);
                 DrawModelObject(panel);
-
+                //jobb
                 SetModelMatrix(scale * rotationY * translationRight);
                 DrawModelObject(customPanel);
         
@@ -248,14 +255,11 @@ namespace GrafikaSzeminarium
             Gl.Clear(ClearBufferMask.ColorBufferBit);
             Gl.Clear(ClearBufferMask.DepthBufferBit);
 
+            program = usePhong ? phongProgram : gourardProgram;
             Gl.UseProgram(program);
 
-            //gondoltam ket fenyel jobban latszik
-            SetUniform3("uLightColor1", new Vector3(1f, 1f, 1f));
-            SetUniform3("uLightPos1", new Vector3(5f, 1.5f, 5f)); 
-
-            //SetUniform3("uLightColor2", new Vector3(1f, 1f, 1f));
-            //SetUniform3("uLightPos2", new Vector3(-5f, 1.5f, 5f)); 
+            SetUniform3(LightColorVariableName, new Vector3(1f, 1f, 1f));
+            SetUniform3(LightPositionVariableName, new Vector3(5f, 1.5f, 5f)); 
 
             SetUniform3(ViewPositionVariableName, new Vector3(camera.Position.X, camera.Position.Y, camera.Position.Z));
             SetUniform1(ShinenessVariableName, shininess);
@@ -267,26 +271,11 @@ namespace GrafikaSzeminarium
             SetMatrix(projectionMatrix, ProjectionMatrixVariableName);
 
             DrawPanels();
-            /*
-            var modelMatrixCenterCube = Matrix4X4.CreateScale((float)cubeArrangementModel.CenterCubeScale);
-            SetModelMatrix(modelMatrixCenterCube);
-            DrawModelObject(cube);
 
-            Matrix4X4<float> diamondScale = Matrix4X4.CreateScale(0.25f);
-            Matrix4X4<float> rotx = Matrix4X4.CreateRotationX((float)Math.PI / 4f);
-            Matrix4X4<float> rotz = Matrix4X4.CreateRotationZ((float)Math.PI / 4f);
-            Matrix4X4<float> roty = Matrix4X4.CreateRotationY((float)cubeArrangementModel.DiamondCubeLocalAngle);
-            Matrix4X4<float> trans = Matrix4X4.CreateTranslation(1f, 1f, 0f);
-            Matrix4X4<float> rotGlobalY = Matrix4X4.CreateRotationY((float)cubeArrangementModel.DiamondCubeGlobalYAngle);
-            Matrix4X4<float> dimondCubeModelMatrix = diamondScale * rotx * rotz * roty * trans * rotGlobalY;
-            SetModelMatrix(dimondCubeModelMatrix);
-            DrawModelObject(cube);
-            */
-
-
-            //ImGuiNET.ImGui.ShowDemoWindow();
-            ImGuiNET.ImGui.Begin("Lighting", ImGuiNET.ImGuiWindowFlags.AlwaysAutoResize | ImGuiNET.ImGuiWindowFlags.NoCollapse);
+            ImGuiNET.ImGui.Begin("Lighting", ImGuiNET.ImGuiWindowFlags.AlwaysAutoResize);
             ImGuiNET.ImGui.SliderFloat("Shininess", ref shininess, 5, 100);
+            if (ImGuiNET.ImGui.RadioButton("Phong", usePhong)) usePhong = true;
+            if (ImGuiNET.ImGui.RadioButton("Gouraud", !usePhong)) usePhong = false;
             ImGuiNET.ImGui.End();
 
             imGuiController.Render();
@@ -341,16 +330,7 @@ namespace GrafikaSzeminarium
             Gl.Uniform3(location, uniformValue);
             CheckError();
         }
-        /*
-        private static unsafe void DrawModelObject(ModelObjectDescriptor modelObject)
-        {
-            Gl.BindVertexArray(modelObject.Vao);
-            Gl.BindBuffer(GLEnum.ElementArrayBuffer, modelObject.Indices);
-            Gl.DrawElements(PrimitiveType.Triangles, modelObject.IndexArrayLength, DrawElementsType.UnsignedInt, null);
-            Gl.BindBuffer(GLEnum.ElementArrayBuffer, 0);
-            Gl.BindVertexArray(0);
-        }
-        */
+
         private static unsafe void DrawModelObject(PanelModelDescriptor model)
         {
             Gl.BindVertexArray(model.Vao);

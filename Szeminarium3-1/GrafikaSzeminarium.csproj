@@ -10,12 +10,16 @@
 
   <ItemGroup>
     <None Remove="Shaders\FragmentShader.frag" />
+    <None Remove="Shaders\FragmentShaderGourard.frag" />
     <None Remove="Shaders\VertexShader.vert" />
+    <None Remove="Shaders\VertexShaderGourard.vert" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Shaders\FragmentShader.frag" />
+    <EmbeddedResource Include="Shaders\FragmentShaderGourard.frag" />
     <EmbeddedResource Include="Shaders\VertexShader.vert" />
+    <EmbeddedResource Include="Shaders\VertexShaderGourard.vert" />
   </ItemGroup>
 
   <ItemGroup>
