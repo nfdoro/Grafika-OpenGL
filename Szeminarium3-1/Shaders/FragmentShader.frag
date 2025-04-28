@@ -27,7 +27,8 @@ void main()
     vec3 viewDir = normalize(uViewPos - outWorldPosition);
     vec3 reflectDir = reflect(-lightDir, norm);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), uShininess);
-
+    vec3 specular = spec * uLightColor * specularStrength;
+    
     vec3 result = (ambient + diffuse + spec) * outCol.rgb;
 
     FragColor = vec4(result, outCol.w);
