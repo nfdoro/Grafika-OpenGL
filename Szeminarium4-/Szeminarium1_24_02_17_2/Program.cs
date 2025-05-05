@@ -24,6 +24,7 @@ namespace Szeminarium1_24_02_17_2
         private static uint program;
 
         private static GlObject teapot;
+        private static GlObject myModel;
 
         private static GlObject table;
 
@@ -245,7 +246,13 @@ namespace Szeminarium1_24_02_17_2
 
             DrawPulsingTeapot();
 
-            DrawRevolvingCube();
+            //DrawRevolvingCube();
+
+            //DrawDaeObject();
+        
+            Gl.BindVertexArray(myModel.Vao);
+            Gl.DrawElements(GLEnum.Triangles, myModel.IndexArrayLength, GLEnum.UnsignedInt, null);
+            Gl.BindVertexArray(0);
 
             //ImGuiNET.ImGui.ShowDemoWindow();
             ImGuiNET.ImGui.Begin("Lighting properties",
@@ -330,18 +337,30 @@ namespace Szeminarium1_24_02_17_2
         private static unsafe void DrawPulsingTeapot()
         {
             // set material uniform to rubber
-
+            
             var modelMatrixForCenterCube = Matrix4X4.CreateScale((float)cubeArrangementModel.CenterCubeScale);
             SetModelMatrix(modelMatrixForCenterCube);
             Gl.BindVertexArray(teapot.Vao);
             Gl.DrawElements(GLEnum.Triangles, teapot.IndexArrayLength, GLEnum.UnsignedInt, null);
             Gl.BindVertexArray(0);
-
+            
             var modelMatrixForTable = Matrix4X4.CreateScale(1f, 1f, 1f);
             SetModelMatrix(modelMatrixForTable);
             Gl.BindVertexArray(table.Vao);
             Gl.DrawElements(GLEnum.Triangles, table.IndexArrayLength, GLEnum.UnsignedInt, null);
             Gl.BindVertexArray(0);
+        }
+
+        private static unsafe void DrawDaeObject()
+        {
+            var scale = Matrix4X4.CreateScale(0.001f);
+            var rotX = Matrix4X4.CreateRotationX((float)(Math.PI / 2));
+            var rot180X = Matrix4X4.CreateRotationX((float)Math.PI);
+            var trans = Matrix4X4.CreateTranslation(0f, 0f, -5f);
+
+            var modelMatrixForCat = trans  * rotX*rot180X * scale;
+            SetModelMatrix(modelMatrixForCat);
+
         }
 
         private static unsafe void SetModelMatrix(Matrix4X4<float> modelMatrix)
@@ -383,7 +402,10 @@ namespace Szeminarium1_24_02_17_2
             float[] face5Color = [0.0f, 1.0f, 1.0f, 1.0f];
             float[] face6Color = [1.0f, 1.0f, 0.0f, 1.0f];
 
-            teapot = ObjResourceReader.CreateObjectFromResource(Gl,"wall3.obj", face1Color);
+            teapot = ObjResourceReader.CreateObjectFromResource(Gl,"teapot.obj", face1Color);
+
+            float[] faceColor = new float[] { 1.0f, 0.5f, 0.3f, 1.0f }; 
+            myModel = ColladaResourceReader.CreateObjectFromResource(Gl, "deer.dae", faceColor);
 
 
             float[] tableColor = [System.Drawing.Color.Azure.R/256f,
