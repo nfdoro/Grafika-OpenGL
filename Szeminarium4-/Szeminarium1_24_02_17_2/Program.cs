@@ -244,11 +244,11 @@ namespace Szeminarium1_24_02_17_2
             SetViewerPosition();
             SetShininess();
 
-            DrawPulsingTeapot();
+            //DrawPulsingTeapot();
 
-            //DrawRevolvingCube();
+           //DrawRevolvingCube();
 
-            //DrawDaeObject();
+            DrawDaeObject();
         
             Gl.BindVertexArray(myModel.Vao);
             Gl.DrawElements(GLEnum.Triangles, myModel.IndexArrayLength, GLEnum.UnsignedInt, null);
@@ -402,10 +402,10 @@ namespace Szeminarium1_24_02_17_2
             float[] face5Color = [0.0f, 1.0f, 1.0f, 1.0f];
             float[] face6Color = [1.0f, 1.0f, 0.0f, 1.0f];
 
-            teapot = ObjResourceReader.CreateObjectFromResource(Gl,"teapot.obj", face1Color);
+            teapot = ObjResourceReader.CreateObjectFromResource(Gl,"wall3.obj", face1Color);
 
             float[] faceColor = new float[] { 1.0f, 0.5f, 0.3f, 1.0f }; 
-            myModel = ColladaResourceReader.CreateObjectFromResource(Gl, "deer.dae", faceColor);
+            myModel = ColladaResourceReader.CreateObjectFromResource(Gl, "cat.dae", faceColor);
 
 
             float[] tableColor = [System.Drawing.Color.Azure.R/256f,
