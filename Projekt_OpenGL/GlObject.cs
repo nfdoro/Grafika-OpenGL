@@ -1,40 +1,53 @@
 ﻿using Silk.NET.OpenGL;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Projekt_OpenGL
+public class GlObject
 {
-    internal class GlObject
+    public uint? AlbedoTexId { get; init; }
+    public uint? NormalTexId { get; init; }
+
+    public uint Vao { get; }
+    public uint Vertices { get; }
+    public uint Colors { get; }
+    public uint Indices { get; }
+    public uint IndexArrayLength { get; }
+
+    private GL Gl;
+
+    public GlObject(uint vao, uint vertices, uint colors, uint indices,
+                    uint indexArrayLength, GL gl,
+                    uint? albedo = null, uint? normal = null)
     {
-        public uint Vao { get; }
-        public uint Vertices { get; }
-        public uint Colors { get; }
-        public uint Indices { get; }
-        public uint IndexArrayLength { get; }
+        Vao = vao;
+        Vertices = vertices;
+        Colors = colors;
+        Indices = indices;
+        IndexArrayLength = indexArrayLength;
+        Gl = gl;
 
-        private GL Gl;
+        AlbedoTexId = albedo;
+        NormalTexId = normal;
+    }
 
-        public GlObject(uint vao, uint vertices, uint colors, uint indeces, uint indexArrayLength, GL gl)
+    public virtual void BindTextures(GL gl)
+    {
+        if (AlbedoTexId.HasValue)
         {
-            this.Vao = vao;
-            this.Vertices = vertices;
-            this.Colors = colors;
-            this.Indices = indeces;
-            this.IndexArrayLength = indexArrayLength;
-            this.Gl = gl;
+            gl.ActiveTexture(TextureUnit.Texture0);
+            gl.BindTexture(TextureTarget.Texture2D, AlbedoTexId.Value);
         }
 
-        internal void ReleaseGlObject()
+        if (NormalTexId.HasValue)
         {
-            // always unbound the vertex buffer first, so no halfway results are displayed by accident
-            Gl.DeleteBuffer(Vertices);
-            Gl.DeleteBuffer(Colors);
-            Gl.DeleteBuffer(Indices);
-            Gl.DeleteVertexArray(Vao);
+            gl.ActiveTexture(TextureUnit.Texture1);
+            gl.BindTexture(TextureTarget.Texture2D, NormalTexId.Value);
         }
     }
 
+    internal void ReleaseGlObject()
+    {
+        Gl.DeleteBuffer(Vertices);
+        Gl.DeleteBuffer(Colors);
+        Gl.DeleteBuffer(Indices);
+        Gl.DeleteVertexArray(Vao);
+    }
 }

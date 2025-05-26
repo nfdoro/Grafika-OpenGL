@@ -398,3 +398,8 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+
+Projekt_OpenGL/Resources
+
+Projekt_OpenGL-regi/Resources

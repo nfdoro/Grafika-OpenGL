@@ -11,21 +11,72 @@
 
   <ItemGroup>
     <None Remove="Resources\cat.dae" />
+    <None Remove="Resources\model\model.dae" />
+    <None Remove="Resources\model\textures\Atlas_Metal_albedo.jpg" />
+    <None Remove="Resources\model\textures\Atlas_Metal_AO.jpg" />
+    <None Remove="Resources\model\textures\Atlas_Metal_metallic.jpg" />
+    <None Remove="Resources\model\textures\Atlas_Metal_normal.png" />
+    <None Remove="Resources\model\textures\Atlas_Metal_opacity.jpg" />
+    <None Remove="Resources\model\textures\Atlas_Metal_roughness.jpg" />
+    <None Remove="Resources\model\textures\Atlas_Painted_metal_albedo.jpg" />
+    <None Remove="Resources\model\textures\Atlas_Painted_metal_AO.jpg" />
+    <None Remove="Resources\model\textures\Atlas_Painted_metal_metallic.jpg" />
+    <None Remove="Resources\model\textures\Atlas_Painted_metal_normal.png" />
+    <None Remove="Resources\model\textures\Atlas_Painted_metal_opacity.jpg" />
+    <None Remove="Resources\model\textures\Atlas_Painted_metal_roughness.jpg" />
+    <None Remove="Resources\model\textures\Tread_albedo.jpg" />
+    <None Remove="Resources\model\textures\Tread_AO.jpg" />
+    <None Remove="Resources\model\textures\Tread_metallic.jpg" />
+    <None Remove="Resources\model\textures\Tread_normal.png" />
+    <None Remove="Resources\model\textures\Tread_opacity.jpg" />
+    <None Remove="Resources\model\textures\Tread_roughness.jpg" />
+    <None Remove="Resources\skybox\Cubemap_Desert_up.png" />
+    <None Remove="Resources\skybox\Cubemap_Desert_up2.png" />
     <None Remove="Resources\wall-e-mesh.dae" />
     <None Remove="Shaders\FragmentShader.frag" />
+    <None Remove="Shaders\SkyboxFragment.frag" />
     <None Remove="Shaders\VertexShader.vert" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Resources\cat.dae" />
-    <EmbeddedResource Include="Resources\wall-e-mesh.dae" />
+    <EmbeddedResource Include="Resources\skybox\Cubemap_Desert_up2.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\skybox\Cubemap_Desert.png" />
+    <EmbeddedResource Include="Resources\skybox\Cubemap_Desert_up.png" />
+    <EmbeddedResource Include="Shaders\SkyboxVertex.vert" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\model\model.dae" />
+    <EmbeddedResource Include="Resources\model\textures\Atlas_Metal_albedo.jpg" />
+    <EmbeddedResource Include="Resources\model\textures\Atlas_Metal_AO.jpg" />
+    <EmbeddedResource Include="Resources\model\textures\Atlas_Metal_metallic.jpg" />
+    <EmbeddedResource Include="Resources\model\textures\Atlas_Metal_normal.png" />
+    <EmbeddedResource Include="Resources\model\textures\Atlas_Metal_opacity.jpg" />
+    <EmbeddedResource Include="Resources\model\textures\Atlas_Metal_roughness.jpg" />
+    <EmbeddedResource Include="Resources\model\textures\Atlas_Painted_metal_albedo.jpg" />
+    <EmbeddedResource Include="Resources\model\textures\Atlas_Painted_metal_AO.jpg" />
+    <EmbeddedResource Include="Resources\model\textures\Atlas_Painted_metal_metallic.jpg" />
+    <EmbeddedResource Include="Resources\model\textures\Atlas_Painted_metal_normal.png" />
+    <EmbeddedResource Include="Resources\model\textures\Atlas_Painted_metal_opacity.jpg" />
+    <EmbeddedResource Include="Resources\model\textures\Atlas_Painted_metal_roughness.jpg" />
+    <EmbeddedResource Include="Resources\model\textures\Tread_albedo.jpg" />
+    <EmbeddedResource Include="Resources\model\textures\Tread_AO.jpg" />
+    <EmbeddedResource Include="Resources\model\textures\Tread_metallic.jpg" />
+    <EmbeddedResource Include="Resources\model\textures\Tread_normal.png" />
+    <EmbeddedResource Include="Resources\model\textures\Tread_opacity.jpg" />
+    <EmbeddedResource Include="Resources\model\textures\Tread_roughness.jpg" />
     <EmbeddedResource Include="Shaders\FragmentShader.frag" />
+    <EmbeddedResource Include="Shaders\SkyboxFragment.frag" />
     <EmbeddedResource Include="Shaders\VertexShader.vert" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Silk.NET" Version="2.22.0" />
     <PackageReference Include="Silk.NET.OpenGL.Extensions.ImGui" Version="2.22.0" />
+    <PackageReference Include="StbImageSharp" Version="2.30.15" />
   </ItemGroup>
 
 </Project>
