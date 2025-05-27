@@ -10,6 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Resources\terrain\textures\**" />
+    <EmbeddedResource Remove="Resources\terrain\textures\**" />
+    <None Remove="Resources\terrain\textures\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Resources\cat.dae" />
     <None Remove="Resources\model\model.dae" />
     <None Remove="Resources\model\textures\Atlas_Metal_albedo.jpg" />
@@ -32,6 +38,11 @@
     <None Remove="Resources\model\textures\Tread_roughness.jpg" />
     <None Remove="Resources\skybox\Cubemap_Desert_up.png" />
     <None Remove="Resources\skybox\Cubemap_Desert_up2.png" />
+    <None Remove="Resources\terrain\desert.obj" />
+    <None Remove="Resources\terrain\terrain.obj" />
+    <None Remove="Resources\terrain\texture\ao.png" />
+    <None Remove="Resources\terrain\texture\normal.png" />
+    <None Remove="Resources\thumbleweed.obj" />
     <None Remove="Resources\wall-e-mesh.dae" />
     <None Remove="Shaders\FragmentShader.frag" />
     <None Remove="Shaders\SkyboxFragment.frag" />
@@ -45,6 +56,12 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\skybox\Cubemap_Desert.png" />
     <EmbeddedResource Include="Resources\skybox\Cubemap_Desert_up.png" />
+    <EmbeddedResource Include="Resources\terrain\desert.obj" />
+    <EmbeddedResource Include="Resources\terrain\texture\ao.png" />
+    <EmbeddedResource Include="Resources\terrain\texture\normal.png" />
+    <EmbeddedResource Include="Resources\thumbleweed.obj" />
+    <EmbeddedResource Include="Shaders\ObjVertex.vert" />
+    <EmbeddedResource Include="Shaders\ObjFragment.frag" />
     <EmbeddedResource Include="Shaders\SkyboxVertex.vert" />
   </ItemGroup>
 
@@ -77,6 +94,14 @@
     <PackageReference Include="Silk.NET" Version="2.22.0" />
     <PackageReference Include="Silk.NET.OpenGL.Extensions.ImGui" Version="2.22.0" />
     <PackageReference Include="StbImageSharp" Version="2.30.15" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Shaders\ObjFragmentShader.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ObjFragmentShader.frag</DependentUpon>
+    </Compile>
   </ItemGroup>
 
 </Project>

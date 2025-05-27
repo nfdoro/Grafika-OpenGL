@@ -1,72 +1,105 @@
 ﻿using Silk.NET.Maths;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Projekt_OpenGL
 {
     internal class NewCameraDescriptor
     {
+        private Vector3D<float> position = new Vector3D<float>(0, 5, 10);
+        private Vector3D<float> target = new Vector3D<float>(0, 0, 0);
+        private Vector3D<float> upVector = new Vector3D<float>(0, 1, 0);
 
-        private float yaw = MathF.PI;   // 180 fok forgatasert kell
-        private float pitch = 0;
+        private float yaw = -90.0f;
+        private float pitch = 0.0f;
+        private const float moveSpeed = 0.5f;
+        private const float rotationSpeed = 5.0f;
 
+        public Vector3D<float> Position => position;
+        public Vector3D<float> Target => target;
+        public Vector3D<float> UpVector => upVector;
 
-        private const float AngleStep = MathF.PI / 180 * 5; // 5 fok a leptek
-        private const float MoveStep = 0.2f;
-
-        private static readonly Vector3D<float> WorldUp = new Vector3D<float>(0, 1, 0);
-
-        public Vector3D<float> Position { get; set; } = new Vector3D<float>(0, 0, 8);
-
-        public Vector3D<float> ForwardVector
+        private Vector3D<float> GetFront()
         {
-            get
-            {
-                float x = MathF.Cos(pitch) * MathF.Sin(yaw);
-                float y = MathF.Sin(pitch);
-                float z = MathF.Cos(pitch) * MathF.Cos(yaw);
-                return Vector3D.Normalize(new Vector3D<float>(x, y, z));
-            }
+            float yawRad = yaw * (float)Math.PI / 180f;
+            float pitchRad = pitch * (float)Math.PI / 180f;
+
+            return new Vector3D<float>(
+                (float)(Math.Cos(yawRad) * Math.Cos(pitchRad)),
+                (float)Math.Sin(pitchRad),
+                (float)(Math.Sin(yawRad) * Math.Cos(pitchRad))
+            );
         }
 
-        public Vector3D<float> RightVector
+        private Vector3D<float> GetRight()
         {
-            get
-            {
-                return Vector3D.Normalize(Vector3D.Cross(ForwardVector, WorldUp));
-            }
+            var front = GetFront();
+            return Vector3D.Normalize(Vector3D.Cross(front, new Vector3D<float>(0, 1, 0)));
         }
 
-        public Vector3D<float> UpVector
+        private void UpdateTarget()
         {
-            get
-            {
-                return Vector3D.Normalize(Vector3D.Cross(RightVector, ForwardVector));
-            }
+            target = position + GetFront();
         }
 
-        public Vector3D<float> Target
+        public void MoveForward()
         {
-            get
-            {
-                return Position + ForwardVector;
-            }
+            position += GetFront() * moveSpeed;
+            UpdateTarget();
         }
 
-        public void YawLeft() { yaw -= AngleStep; }
-        public void YawRight() { yaw += AngleStep; }
-        public void PitchUp() { pitch += AngleStep; }
-        public void PitchDown() { pitch -= AngleStep; }
+        public void MoveBackward()
+        {
+            position -= GetFront() * moveSpeed;
+            UpdateTarget();
+        }
 
+        public void MoveLeft()
+        {
+            position -= GetRight() * moveSpeed;
+            UpdateTarget();
+        }
 
-        public void MoveForward() { Position += ForwardVector * MoveStep; }
-        public void MoveBackward() { Position -= ForwardVector * MoveStep; }
-        public void MoveRight() { Position += RightVector * MoveStep; }
-        public void MoveLeft() { Position -= RightVector * MoveStep; }
-        public void MoveUp() { Position += UpVector * MoveStep; }
-        public void MoveDown() { Position -= UpVector * MoveStep; }
+        public void MoveRight()
+        {
+            position += GetRight() * moveSpeed;
+            UpdateTarget();
+        }
+
+        public void MoveUp()
+        {
+            position += upVector * moveSpeed;
+            UpdateTarget();
+        }
+
+        public void MoveDown()
+        {
+            position -= upVector * moveSpeed;
+            UpdateTarget();
+        }
+
+        public void YawLeft()
+        {
+            yaw -= rotationSpeed;
+            UpdateTarget();
+        }
+
+        public void YawRight()
+        {
+            yaw += rotationSpeed;
+            UpdateTarget();
+        }
+
+        public void PitchUp()
+        {
+            pitch += rotationSpeed;
+            if (pitch > 89.0f) pitch = 89.0f;
+            UpdateTarget();
+        }
+
+        public void PitchDown()
+        {
+            pitch -= rotationSpeed;
+            if (pitch < -89.0f) pitch = -89.0f;
+            UpdateTarget();
+        }
     }
 }

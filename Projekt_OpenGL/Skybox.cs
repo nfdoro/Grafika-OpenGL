@@ -11,7 +11,7 @@ namespace Projekt_OpenGL
         private uint cubemapTexture;
         private GL gl;
 
-        
+
         private static readonly float[] skyboxVertices = {
             // positions          
             -1.0f,  1.0f, -1.0f,
@@ -98,17 +98,17 @@ namespace Projekt_OpenGL
                 {
                     if (stream != null)
                     {
-                   
+                        StbImage.stbi_set_flip_vertically_on_load(0);
                         ImageResult fullImage = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
 
                         Console.WriteLine($"Loaded cubemap image: {fullImage.Width}x{fullImage.Height} ({fullImage.Comp})");
 
-                        
-                        int faceSize = fullImage.Width / 4; 
+
+                        int faceSize = fullImage.Width / 4;
 
                         Console.WriteLine($"Using FULL QUALITY face size: {faceSize}x{faceSize}");
 
-                      
+
                         var facePositions = new (int x, int y, int target, string name)[]
                         {
                             (2 * faceSize, 1 * faceSize, 0, "Right (+X)"),  // +X (right)
@@ -119,7 +119,7 @@ namespace Projekt_OpenGL
                             (3 * faceSize, 1 * faceSize, 5, "Back (-Z)")    // -Z (back)
                         };
 
-                        
+
                         int bytesPerPixel = 4; //RGBA
                         var format = PixelFormat.Rgba;
                         var internalFormat = InternalFormat.Rgba;
@@ -128,7 +128,7 @@ namespace Projekt_OpenGL
                         {
                             var (x, y, target, name) = facePositions[i];
 
-                            
+
                             if (x + faceSize > fullImage.Width || y + faceSize > fullImage.Height)
                             {
                                 Console.WriteLine($"Warning: Face {name} extends beyond image bounds.");
@@ -136,7 +136,7 @@ namespace Projekt_OpenGL
                                 continue;
                             }
 
-                           
+
                             byte[] faceData = ExtractFaceHighQuality(fullImage.Data, fullImage.Width, fullImage.Height,
                                                                     x, y, faceSize, fullImage.Comp);
 
@@ -157,6 +157,8 @@ namespace Projekt_OpenGL
                                 CreateSingleFallbackFace(target);
                             }
                         }
+
+                        StbImage.stbi_set_flip_vertically_on_load(1);
                     }
                     else
                     {
@@ -171,22 +173,23 @@ namespace Projekt_OpenGL
             {
                 Console.WriteLine($"Error loading cubemap: {ex.Message}");
                 CreateFallbackCubemap();
+                StbImage.stbi_set_flip_vertically_on_load(1);
                 return cubemapTexture;
             }
 
-           
+
             SetHighQualityCubemapParameters();
 
             Console.WriteLine("HIGH QUALITY Cubemap loaded successfully!");
             return cubemapTexture;
         }
 
-        
+
         private byte[] ExtractFaceHighQuality(byte[] sourceData, int sourceWidth, int sourceHeight,
                                              int faceX, int faceY, int faceSize, ColorComponents sourceFormat)
         {
             int sourceBytesPerPixel = sourceFormat == ColorComponents.RedGreenBlueAlpha ? 4 : 3;
-            int targetBytesPerPixel = 4; 
+            int targetBytesPerPixel = 4;
 
             byte[] faceData = new byte[faceSize * faceSize * targetBytesPerPixel];
 
@@ -197,23 +200,23 @@ namespace Projekt_OpenGL
                     int sourceIndex = ((faceY + y) * sourceWidth + (faceX + x)) * sourceBytesPerPixel;
                     int faceIndex = (y * faceSize + x) * targetBytesPerPixel;
 
-                    
+
                     if (sourceIndex + sourceBytesPerPixel <= sourceData.Length &&
                         faceIndex + targetBytesPerPixel <= faceData.Length)
                     {
-                        
+
                         faceData[faceIndex + 0] = sourceData[sourceIndex + 0]; // R
                         faceData[faceIndex + 1] = sourceData[sourceIndex + 1]; // G
                         faceData[faceIndex + 2] = sourceData[sourceIndex + 2]; // B
 
-                        
+
                         if (sourceBytesPerPixel == 4)
                         {
                             faceData[faceIndex + 3] = sourceData[sourceIndex + 3]; // A
                         }
                         else
                         {
-                            faceData[faceIndex + 3] = 255; 
+                            faceData[faceIndex + 3] = 255;
                         }
                     }
                 }
@@ -222,19 +225,19 @@ namespace Projekt_OpenGL
             return faceData;
         }
 
-       
+
         private void SetHighQualityCubemapParameters()
         {
-            
+
             gl.GenerateMipmap(TextureTarget.TextureCubeMap);
 
-            
+
             gl.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter,
                             (int)TextureMinFilter.LinearMipmapLinear);
             gl.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter,
                             (int)TextureMagFilter.Linear);
 
-        
+
             try
             {
                 gl.TexParameter(TextureTarget.TextureCubeMap, (TextureParameterName)0x84FE, 16.0f); // GL_TEXTURE_MAX_ANISOTROPY_EXT
@@ -245,14 +248,14 @@ namespace Projekt_OpenGL
                 Console.WriteLine("Anisotropic filtering not supported");
             }
 
-           
+
             gl.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
             gl.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
             gl.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, (int)TextureWrapMode.ClampToEdge);
         }
         private unsafe void CreateSingleFallbackFace(int faceIndex)
         {
-            
+
             var colors = new byte[][]
             {
                 new byte[] { 139, 117, 81 },   // desert brown +X
@@ -292,7 +295,7 @@ namespace Projekt_OpenGL
 
         private unsafe void CreateFallbackCubemap()
         {
-            
+
             var colors = new byte[][]
             {
                 new byte[] { 139, 117, 81 },   // desert brown +X
@@ -317,7 +320,7 @@ namespace Projekt_OpenGL
 
         public void Render(uint shaderProgram)
         {
-           
+
             gl.DepthFunc(DepthFunction.Lequal);
 
             gl.UseProgram(shaderProgram);
@@ -328,7 +331,7 @@ namespace Projekt_OpenGL
             gl.DrawArrays(PrimitiveType.Triangles, 0, 36);
 
             gl.BindVertexArray(0);
-            gl.DepthFunc(DepthFunction.Less); 
+            gl.DepthFunc(DepthFunction.Less);
         }
 
         public void Dispose()

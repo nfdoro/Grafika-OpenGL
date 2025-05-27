@@ -11,7 +11,7 @@ public class GlObject
     public uint Indices { get; }
     public uint IndexArrayLength { get; }
 
-    private GL Gl;
+    protected GL Gl;
 
     public GlObject(uint vao, uint vertices, uint colors, uint indices,
                     uint indexArrayLength, GL gl,
