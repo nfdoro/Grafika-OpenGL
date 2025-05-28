@@ -1,165 +1,112 @@
 ﻿using Silk.NET.Input;
 using Silk.NET.Maths;
-using System;
 
 namespace Projekt_OpenGL
 {
     public enum CameraMode
     {
-        WallEFirstPerson,
-        WallEThirdPerson,
+        ThirdPerson,
+        FirstPerson,
         Free
     }
 
     public class CameraController
     {
+        private CameraMode currentMode = CameraMode.ThirdPerson;
         private WallEController wallEController;
-        private CameraMode currentMode = CameraMode.WallEThirdPerson;
 
-
-        private Vector3D<float> freeCameraPosition = new Vector3D<float>(0, 10, 20);
-        private float freeCameraYaw = -90f;
-        private float freeCameraPitch = -15f;
-        private const float FreeCameraSpeed = 15f;
-        private const float FreeCameraSensitivity = 80f;
-
-  
-        private float firstPersonPitch = 0f;
-        private const float FirstPersonSensitivity = 80f;
-        private const float MaxPitch = 60f;
+        private Vector3D<float> freeCameraPosition = new Vector3D<float>(0f, 10f, 20f);
+        private Vector3D<float> freeCameraTarget = new Vector3D<float>(0f, 0f, 0f);
+        private float freeCameraYaw = 0f;
+        private float freeCameraPitch = -20f;
+        private const float FreeCameraMoveSpeed = 15f;
+        private const float FreeCameraRotationSpeed = 60f;
 
         public CameraMode CurrentMode => currentMode;
+        public WallEController WallEController => wallEController;
+
+        public Vector3D<float> Position
+        {
+            get
+            {
+                return currentMode switch
+                {
+                    CameraMode.ThirdPerson => wallEController?.GetThirdPersonCameraPosition() ?? new Vector3D<float>(0, 10, 20),
+                    CameraMode.FirstPerson => wallEController?.GetFirstPersonCameraPosition() ?? new Vector3D<float>(0, 6, 0),
+                    CameraMode.Free => freeCameraPosition,
+                    _ => new Vector3D<float>(0, 10, 20)
+                };
+            }
+        }
+
+        public Vector3D<float> Target
+        {
+            get
+            {
+                return currentMode switch
+                {
+                    CameraMode.ThirdPerson => wallEController?.GetCameraTarget() ?? new Vector3D<float>(0, 0, 0),
+                    CameraMode.FirstPerson => wallEController?.GetFirstPersonCameraTarget() ?? new Vector3D<float>(0, 0,0),
+                    CameraMode.Free => freeCameraTarget,
+                    _ => new Vector3D<float>(0, 0, 0)
+                };
+            }
+        }
+
+        public Vector3D<float> UpVector => new Vector3D<float>(0f, 1f, 0f);
+
+        public Vector3D<float> WallEPosition => wallEController?.Position ?? new Vector3D<float>(0, 0, 0);
+        public float WallERotationY => wallEController?.RotationY ?? 0f;
 
         public CameraController()
         {
-           
             wallEController = new WallEController();
         }
 
         public void InitializeTerrain(TerrainHeightCalculator terrainCalculator)
         {
-                  wallEController.InitializeTerrain(terrainCalculator);
+            wallEController.InitializeTerrain(terrainCalculator);
         }
 
-        public void ToggleCameraMode()
+        public void SetCollisionManagers(CactusManager cactusManager, ThumbleweedManager thumbleweedManager, SunManager sunManager, CanManager canManager)
         {
-            currentMode = (CameraMode)(((int)currentMode + 1) % 3);
-
-            if (currentMode == CameraMode.WallEFirstPerson)
-            {
-                firstPersonPitch = 0f; 
-            }
-            else if (currentMode == CameraMode.Free)
-            {
-     
-                var wallEPos = wallEController.Position;
-                freeCameraPosition = new Vector3D<float>(wallEPos.X, wallEPos.Y +5f, wallEPos.Z -15f);
-
-
-                freeCameraYaw = 0f;   
-                freeCameraPitch = -15f; 
-            }
-
-            Console.WriteLine($"Camera mode switched to: {currentMode}");
+            wallEController.SetCollisionManagers(cactusManager, thumbleweedManager, sunManager,canManager);
         }
 
         public void HandleMovement(Key key, float deltaTime)
         {
             switch (currentMode)
             {
+                case CameraMode.ThirdPerson:
+                case CameraMode.FirstPerson:
+                    HandleWallEMovement(key, deltaTime);
+                    break;
                 case CameraMode.Free:
                     HandleFreeCameraMovement(key, deltaTime);
-                    break;
-
-                case CameraMode.WallEFirstPerson:
-                case CameraMode.WallEThirdPerson:
-                    HandleWallEMovement(key, deltaTime);
+                    HandleFreeCameraRotation(key, deltaTime);   
                     break;
             }
         }
 
         public void HandleCameraRotation(Key key, float deltaTime)
         {
-            switch (currentMode)
+            if (CurrentMode == CameraMode.FirstPerson)
             {
-                case CameraMode.Free:
-                    HandleFreeCameraRotation(key, deltaTime);
-                    break;
-
-                case CameraMode.WallEFirstPerson:
-                    HandleFirstPersonRotation(key, deltaTime);
-                    break;
-
-                case CameraMode.WallEThirdPerson:
-                     HandleWallERotation(key, deltaTime);
-                    break;
+                if (key == Key.Up)
+                    wallEController.AdjustPitch(true);
+                else if (key == Key.Down)
+                    wallEController.AdjustPitch(false);
+            }
+            else
+            {
+                if (key == Key.Left)
+                    wallEController.RotateLeft(deltaTime);
+                else if (key == Key.Right)
+                    wallEController.RotateRight(deltaTime);
             }
         }
 
-        private void HandleFreeCameraMovement(Key key, float deltaTime)
-        {
-            float yawRad = freeCameraYaw * (float)Math.PI / 180f;
-            float pitchRad = freeCameraPitch * (float)Math.PI / 180f;
 
-            var forward = new Vector3D<float>(
-                MathF.Cos(yawRad) * MathF.Cos(pitchRad),
-                MathF.Sin(pitchRad),
-                MathF.Sin(yawRad) * MathF.Cos(pitchRad)
-            );
-            var right = Vector3D.Cross(forward, Vector3D<float>.UnitY);
-            float length = MathF.Sqrt(right.X * right.X + right.Y * right.Y + right.Z * right.Z);
-            if (length > 0)
-                right = new Vector3D<float>(right.X / length, right.Y / length, right.Z / length);
-
-            var up = Vector3D<float>.UnitY;
-
-            float speed = FreeCameraSpeed * deltaTime;
-
-            switch (key)
-            {
-                case Key.W:
-                    freeCameraPosition += forward * speed;
-                    break;
-                case Key.S:
-                    freeCameraPosition -= forward * speed;
-                    break;
-                case Key.A:
-                    freeCameraPosition -= right * speed;
-                    break;
-                case Key.D:
-                    freeCameraPosition += right * speed;
-                    break;
-                case Key.R:
-                    freeCameraPosition += up * speed;
-                    break;
-                case Key.F:
-                    freeCameraPosition -= up * speed;
-                    break;
-            }
-        }
-
-        private void HandleFreeCameraRotation(Key key, float deltaTime)
-        {
-            float sensitivity = FreeCameraSensitivity * deltaTime;
-
-            switch (key)
-            {
-                case Key.Left:
-                    freeCameraYaw -= sensitivity;
-                    break;
-                case Key.Right:
-                    freeCameraYaw += sensitivity;
-                    break;
-                case Key.Up:
-                    freeCameraPitch += sensitivity;
-                    break;
-                case Key.Down:
-                    freeCameraPitch -= sensitivity;
-                    break;
-            }
-
-            freeCameraPitch = Math.Clamp(freeCameraPitch, -89f, 89f);
-        }
 
         private void HandleWallEMovement(Key key, float deltaTime)
         {
@@ -180,106 +127,112 @@ namespace Projekt_OpenGL
             }
         }
 
-        private void HandleWallERotation(Key key, float deltaTime)
+        private void HandleFreeCameraMovement(Key key, float deltaTime)
         {
-            switch (key)
-            {
-                case Key.Left:
-                    wallEController.RotateLeft(deltaTime);
-                    break;
-                case Key.Right:
-                    wallEController.RotateRight(deltaTime);
-                    break;
-            }
-        }
+            float yawRad = freeCameraYaw * (float)Math.PI / 180f;
+            float pitchRad = freeCameraPitch * (float)Math.PI / 180f;
 
-        private void HandleFirstPersonRotation(Key key, float deltaTime)
-        {
-            float sensitivity = FirstPersonSensitivity * deltaTime;
-
-            switch (key)
-            {
-                case Key.Left:
-
-                    wallEController.RotateLeft(deltaTime);
-                    break;
-                case Key.Right:
-                    wallEController.RotateRight(deltaTime);
-                    break;
-                case Key.Up:
-
-                    firstPersonPitch += sensitivity;
-                    firstPersonPitch = Math.Clamp(firstPersonPitch, -MaxPitch, MaxPitch);
-                    break;
-                case Key.Down:
-                    firstPersonPitch -= sensitivity;
-                    firstPersonPitch = Math.Clamp(firstPersonPitch, -MaxPitch, MaxPitch);
-                    break;
-            }
-        }
-
-        public Vector3D<float> Position
-        {
-            get
-            {
-                return currentMode switch
-                {
-                    CameraMode.Free => freeCameraPosition,
-                    CameraMode.WallEThirdPerson => wallEController.GetThirdPersonCameraPosition(),
-                    CameraMode.WallEFirstPerson => wallEController.GetFirstPersonCameraPosition(),
-                    _ => freeCameraPosition
-                };
-            }
-        }
-
-        public Vector3D<float> Target
-        {
-            get
-            {
-                return currentMode switch
-                {
-                    CameraMode.Free => freeCameraPosition + new Vector3D<float>(
-                        MathF.Cos(freeCameraYaw * (float)Math.PI / 180f) * MathF.Cos(freeCameraPitch * (float)Math.PI / 180f),
-                        MathF.Sin(freeCameraPitch * (float)Math.PI / 180f),
-                        MathF.Sin(freeCameraYaw * (float)Math.PI / 180f) * MathF.Cos(freeCameraPitch * (float)Math.PI / 180f)
-                    ),
-                    CameraMode.WallEThirdPerson => wallEController.GetCameraTarget(),
-                    CameraMode.WallEFirstPerson => GetFirstPersonTarget(),
-                    _ => freeCameraPosition + Vector3D<float>.UnitZ
-                };
-            }
-        }
-
-        private Vector3D<float> GetFirstPersonTarget()
-        {
-            var wallEPos = wallEController.Position;
-
-
-            float wallEYawRad = wallEController.RotationY * (float)Math.PI / 180f;
-            float pitchRad = firstPersonPitch * (float)Math.PI / 180f;
-
-            var targetDirection = new Vector3D<float>(
-                (float)Math.Sin(wallEYawRad) * (float)Math.Cos(pitchRad),
+            Vector3D<float> forward = new Vector3D<float>(
+                (float)Math.Sin(yawRad) * (float)Math.Cos(pitchRad),
                 (float)Math.Sin(pitchRad),
-                (float)Math.Cos(wallEYawRad) * (float)Math.Cos(pitchRad)
+                (float)Math.Cos(yawRad) * (float)Math.Cos(pitchRad)
             );
 
-            return wallEPos + new Vector3D<float>(0, 1.5f, 0) + targetDirection * 10f;
+            Vector3D<float> right = Vector3D.Cross(forward, UpVector);
+            right = Vector3D.Normalize(right);
+
+            Vector3D<float> up = Vector3D.Cross(right, forward);
+
+            float moveSpeed = FreeCameraMoveSpeed * deltaTime;
+
+            switch (key)
+            {
+                case Key.W:
+                    freeCameraPosition += forward * moveSpeed;
+                    break;
+                case Key.S:
+                    freeCameraPosition -= forward * moveSpeed;
+                    break;
+                case Key.A:
+                    freeCameraPosition -= right * moveSpeed;
+                    break;
+                case Key.D:
+                    freeCameraPosition += right * moveSpeed;
+                    break;
+                case Key.Q:
+                    freeCameraPosition += up * moveSpeed;
+                    break;
+                case Key.E:
+                    freeCameraPosition -= up * moveSpeed;
+                    break;
+            }
+
+            UpdateFreeCameraTarget();
         }
 
-        public Vector3D<float> UpVector => Vector3D<float>.UnitY;
+        public void HandleFreeCameraRotation(Key key, float deltaTime)
+        {
+            float rotationSpeed = FreeCameraRotationSpeed * deltaTime;
 
+            switch (key)
+            {
+                case Key.Left:
+                    freeCameraYaw -= rotationSpeed;
+                    break;
+                case Key.Right:
+                    freeCameraYaw += rotationSpeed;
+                    break;
+                case Key.Up:
+                    freeCameraPitch += rotationSpeed;
+                    freeCameraPitch = Math.Clamp(freeCameraPitch, -89f, 89f);
+                    break;
+                case Key.Down:
+                    freeCameraPitch -= rotationSpeed;
+                    freeCameraPitch = Math.Clamp(freeCameraPitch, -89f, 89f);
+                    break;
+            }
 
-        public Vector3D<float> WallEPosition => wallEController.Position;
-        public float WallERotationY => wallEController.RotationY;
+            // Normalize yaw
+            while (freeCameraYaw < 0f) freeCameraYaw += 360f;
+            while (freeCameraYaw >= 360f) freeCameraYaw -= 360f;
+
+            UpdateFreeCameraTarget();
+        }
+
+        private void UpdateFreeCameraTarget()
+        {
+            float yawRad = freeCameraYaw * (float)Math.PI / 180f;
+            float pitchRad = freeCameraPitch * (float)Math.PI / 180f;
+
+            Vector3D<float> direction = new Vector3D<float>(
+                (float)Math.Sin(yawRad) * (float)Math.Cos(pitchRad),
+                (float)Math.Sin(pitchRad),
+                (float)Math.Cos(yawRad) * (float)Math.Cos(pitchRad)
+            );
+
+            freeCameraTarget = freeCameraPosition + direction;
+        }
+
+        public void ToggleCameraMode()
+        {
+            currentMode = currentMode switch
+            {
+                CameraMode.ThirdPerson => CameraMode.FirstPerson,
+                CameraMode.FirstPerson => CameraMode.Free,
+                CameraMode.Free => CameraMode.ThirdPerson,
+                _ => CameraMode.ThirdPerson
+            };
+
+            Console.WriteLine($"Camera mode switched to: {currentMode}");
+        }
 
         public string GetCurrentModeDescription()
         {
             return currentMode switch
             {
-                CameraMode.Free => "Free Camera - WASD: move, Arrow keys: look, R/F: up/down",
-                CameraMode.WallEThirdPerson => "Third Person - WASD: move Wall-E, Arrow keys: rotate Wall-E",
-                CameraMode.WallEFirstPerson => "First Person - WASD: move Wall-E, Left/Right: turn, Up/Down: look",
+                CameraMode.ThirdPerson => "WASD: Move Wall-E, Arrow Keys: N/A",
+                CameraMode.FirstPerson => "WASD: Move Wall-E, Arrow Keys: N/A",
+                CameraMode.Free => "WASD/RF: Move Camera, Arrow Keys: Look Around",
                 _ => "Unknown mode"
             };
         }
@@ -292,6 +245,21 @@ namespace Projekt_OpenGL
         public void PrintTerrainDebugInfo()
         {
             wallEController.PrintTerrainInfo();
+        }
+
+        public void UpdateEnergySystem(float deltaTime)
+        {
+            wallEController?.UpdateEnergySystem(deltaTime);
+        }
+
+        public bool IsGameOver()
+        {
+            return wallEController?.EnergySystem?.IsEnergyEmpty ?? false;
+        }
+
+        public void RestartGame()
+        {
+            wallEController?.RestartGame();
         }
     }
 }

@@ -106,7 +106,7 @@ namespace Projekt_OpenGL
 
                         int faceSize = fullImage.Width / 4;
 
-                        Console.WriteLine($"Using FULL QUALITY face size: {faceSize}x{faceSize}");
+                        Console.WriteLine($"Using face size: {faceSize}x{faceSize}");
 
 
                         var facePositions = new (int x, int y, int target, string name)[]
@@ -148,17 +148,17 @@ namespace Projekt_OpenGL
                                         internalFormat, (uint)faceSize, (uint)faceSize,
                                         0, format, PixelType.UnsignedByte, ptr);
                                 }
-
-                                Console.WriteLine($"✓ HIGH QUALITY {name}: {faceSize}x{faceSize}, position ({x}, {y})");
                             }
                             else
                             {
-                                Console.WriteLine($"✗ Failed to extract {name}, using fallback");
                                 CreateSingleFallbackFace(target);
                             }
                         }
 
                         StbImage.stbi_set_flip_vertically_on_load(1);
+
+                        Console.WriteLine($"Succesfully loadaed cubemap texture from resources: {resourcePath}");
+
                     }
                     else
                     {
@@ -180,7 +180,7 @@ namespace Projekt_OpenGL
 
             SetHighQualityCubemapParameters();
 
-            Console.WriteLine("HIGH QUALITY Cubemap loaded successfully!");
+            Console.WriteLine("Cubemap loaded successfully!");
             return cubemapTexture;
         }
 
@@ -241,7 +241,6 @@ namespace Projekt_OpenGL
             try
             {
                 gl.TexParameter(TextureTarget.TextureCubeMap, (TextureParameterName)0x84FE, 16.0f); // GL_TEXTURE_MAX_ANISOTROPY_EXT
-                Console.WriteLine("Anisotropic filtering enabled (16x)");
             }
             catch
             {
@@ -278,17 +277,13 @@ namespace Projekt_OpenGL
 
         private void ListAvailableResources()
         {
-            Console.WriteLine("Available embedded resources:");
+
             var assembly = Assembly.GetExecutingAssembly();
             foreach (string name in assembly.GetManifestResourceNames())
             {
                 if (name.Contains("skybox") || name.Contains("Cubemap"))
                 {
-                    Console.WriteLine($"  ★ {name}");
-                }
-                else
-                {
-                    Console.WriteLine($"    {name}");
+                    Console.WriteLine($" --> {name}");
                 }
             }
         }

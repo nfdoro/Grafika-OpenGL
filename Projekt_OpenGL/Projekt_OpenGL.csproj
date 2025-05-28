@@ -10,13 +10,41 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Resources\GameOBJ\textures-can1\**" />
+    <Compile Remove="Resources\GameOBJ\textures-can2\**" />
     <Compile Remove="Resources\terrain\textures\**" />
+    <EmbeddedResource Remove="Resources\GameOBJ\textures-can1\**" />
+    <EmbeddedResource Remove="Resources\GameOBJ\textures-can2\**" />
     <EmbeddedResource Remove="Resources\terrain\textures\**" />
+    <None Remove="Resources\GameOBJ\textures-can1\**" />
+    <None Remove="Resources\GameOBJ\textures-can2\**" />
     <None Remove="Resources\terrain\textures\**" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Resources\cactus\cactus.obj" />
+    <None Remove="Resources\cactus\Cactus1.obj" />
+    <None Remove="Resources\cactus\Cactus2.obj" />
+    <None Remove="Resources\cactus\Cactus3.obj" />
+    <None Remove="Resources\cactus\Cactus4.obj" />
+    <None Remove="Resources\cactus\Cactus5.obj" />
+    <None Remove="Resources\cactus\textures\diffuse.png" />
+    <None Remove="Resources\cactus\textures\normal.png" />
+    <None Remove="Resources\cactus\textures\roughness.png" />
     <None Remove="Resources\cat.dae" />
+    <None Remove="Resources\GameOBJ\can1.obj" />
+    <None Remove="Resources\GameOBJ\can2.obj" />
+    <None Remove="Resources\GameOBJ\sun.obj" />
+    <None Remove="Resources\GameOBJ\textures_can1\AO_2k.png" />
+    <None Remove="Resources\GameOBJ\textures_can1\BaseColor_2k.png" />
+    <None Remove="Resources\GameOBJ\textures_can1\Metallic_2k.png" />
+    <None Remove="Resources\GameOBJ\textures_can1\Normal_2k.png" />
+    <None Remove="Resources\GameOBJ\textures_can1\Roughness_2k.png" />
+    <None Remove="Resources\GameOBJ\textures_can2\AO_2k.png" />
+    <None Remove="Resources\GameOBJ\textures_can2\BaseColor_2k.png" />
+    <None Remove="Resources\GameOBJ\textures_can2\Metallic_2k.png" />
+    <None Remove="Resources\GameOBJ\textures_can2\Normal_2k.png" />
+    <None Remove="Resources\GameOBJ\textures_can2\Roughness_2k.png" />
     <None Remove="Resources\model\model.dae" />
     <None Remove="Resources\model\textures\Atlas_Metal_albedo.jpg" />
     <None Remove="Resources\model\textures\Atlas_Metal_AO.jpg" />
@@ -46,10 +74,36 @@
     <None Remove="Resources\wall-e-mesh.dae" />
     <None Remove="Shaders\FragmentShader.frag" />
     <None Remove="Shaders\SkyboxFragment.frag" />
+    <None Remove="Shaders\SunFragment.frag" />
+    <None Remove="Shaders\SunVertex.vert" />
     <None Remove="Shaders\VertexShader.vert" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Resources\GameOBJ\textures_can1\AO_2k.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\cactus\Cactus1.obj" />
+    <EmbeddedResource Include="Resources\cactus\Cactus2.obj" />
+    <EmbeddedResource Include="Resources\cactus\Cactus3.obj" />
+    <EmbeddedResource Include="Resources\cactus\Cactus4.obj" />
+    <EmbeddedResource Include="Resources\cactus\Cactus5.obj" />
+    <EmbeddedResource Include="Resources\cactus\textures\diffuse.png" />
+    <EmbeddedResource Include="Resources\cactus\textures\normal.png" />
+    <EmbeddedResource Include="Resources\cactus\textures\roughness.png" />
+    <EmbeddedResource Include="Resources\GameOBJ\can1.obj" />
+    <EmbeddedResource Include="Resources\GameOBJ\can2.obj" />
+    <EmbeddedResource Include="Resources\GameOBJ\sun.obj" />
+    <EmbeddedResource Include="Resources\GameOBJ\textures_can1\BaseColor_2k.png" />
+    <EmbeddedResource Include="Resources\GameOBJ\textures_can1\Metallic_2k.png" />
+    <EmbeddedResource Include="Resources\GameOBJ\textures_can1\Normal_2k.png" />
+    <EmbeddedResource Include="Resources\GameOBJ\textures_can1\Roughness_2k.png" />
+    <EmbeddedResource Include="Resources\GameOBJ\textures_can2\AO_2k.png" />
+    <EmbeddedResource Include="Resources\GameOBJ\textures_can2\BaseColor_2k.png" />
+    <EmbeddedResource Include="Resources\GameOBJ\textures_can2\Metallic_2k.png" />
+    <EmbeddedResource Include="Resources\GameOBJ\textures_can2\Normal_2k.png" />
+    <EmbeddedResource Include="Resources\GameOBJ\textures_can2\Roughness_2k.png" />
     <EmbeddedResource Include="Resources\skybox\Cubemap_Desert_up2.png" />
   </ItemGroup>
 
@@ -87,6 +141,8 @@
     <EmbeddedResource Include="Resources\model\textures\Tread_roughness.jpg" />
     <EmbeddedResource Include="Shaders\FragmentShader.frag" />
     <EmbeddedResource Include="Shaders\SkyboxFragment.frag" />
+    <EmbeddedResource Include="Shaders\SunFragment.frag" />
+    <EmbeddedResource Include="Shaders\SunVertex.vert" />
     <EmbeddedResource Include="Shaders\VertexShader.vert" />
   </ItemGroup>
 

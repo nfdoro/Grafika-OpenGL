@@ -5,25 +5,34 @@ using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 using System.Numerics;
 using System.Reflection;
+using ImGuiNET;
 
 namespace Projekt_OpenGL
 {
     internal class Program
     {
         private static CameraController cameraController = new();
-        private static CubeArrangementModel cubeArrangementModel = new();
-        private static ThumbleweedManager thumbleweedManager = new ThumbleweedManager(); 
+        private static ThumbleweedManager thumbleweedManager = new ThumbleweedManager();
+        private static CactusManager cactusManager = new CactusManager();
+        private static SunManager sunManager = new SunManager();
+        private static CanManager canManager = new CanManager();
+        private static HitboxRenderer hitboxRenderer = new HitboxRenderer();
+        private static bool showHitboxes = false;
+
+        // Game state
+        private static bool isGameOver = false;
+        private static bool gameOverMessageShown = false;
 
         private static IWindow window;
         private static GL Gl;
         private static ImGuiController imGuiController;
 
         private static uint program;
- 
-        private static TexturedObjGlObject desertTextured;
-        private static Skybox skybox;
         private static uint skyboxProgram;
         private static uint objProgram;
+
+        private static TexturedObjGlObject desertTextured;
+        private static Skybox skybox;
 
         private static HashSet<Key> pressedKeys = new HashSet<Key>();
 
@@ -41,23 +50,21 @@ namespace Projekt_OpenGL
         private const string TextureVariableName = "uTexture";
         private const string UseTextureVariableName = "uUseTexture";
 
-        private static float shininess = 50;
-        private static float ambient = 0.1f;
+        private static float renderDistance = 500f;
+        private static float renderDistanceInput = renderDistance;
+
+        private static float shininess = 60;
+        private static float ambient = 0.3f;
         private static float diffuse = 0.3f;
         private static float specular = 0.6f;
         private static float red = 1.0f;
         private static float green = 1.0f;
         private static float blue = 1.0f;
         private static float lightX = 0f;
-        private static float lightY = 1.2f;
+        private static float lightY = 5.0f;
         private static float lightZ = 0f;
-        private static float lightXInput = lightX;
-        private static float lightYInput = lightY;
-        private static float lightZInput = lightZ;
 
         private static float wallEScale = 1.0f;
-        private static float wallERotX = 0f;
-        private static float wallERotZ = 0f;
 
         private static List<GlObject> wallEParts;
         private static TerrainHeightCalculator terrainCalculator;
@@ -104,21 +111,69 @@ namespace Projekt_OpenGL
 
         private static void Window_Update(double deltaTime)
         {
-            foreach (var key in pressedKeys)
+
+            if (!isGameOver)
             {
-                if (key == Key.W || key == Key.A || key == Key.S || key == Key.D || key == Key.R || key == Key.F)
+                foreach (var key in pressedKeys)
                 {
-                    cameraController.HandleMovement(key, (float)deltaTime);
+                    if (key == Key.W || key == Key.A || key == Key.S || key == Key.D || key == Key.Q || key == Key.E)
+                    {
+                        cameraController.HandleMovement(key, (float)deltaTime);
+                    }
+                    else if (key == Key.Left || key == Key.Right || key == Key.Up || key == Key.Down)
+                    {
+                        cameraController.HandleFreeCameraRotation(key, (float)deltaTime);
+                        if (cameraController.CurrentMode == CameraMode.FirstPerson)
+                        {
+                            cameraController.HandleCameraRotation(key, (float)deltaTime);
+                        }
+                    }
                 }
-                else if (key == Key.Left || key == Key.Right || key == Key.Up || key == Key.Down)
+
+                //Wall-e energy system
+                var wallEController = cameraController.WallEController;
+                if (wallEController != null)
                 {
-                    cameraController.HandleCameraRotation(key, (float)deltaTime);
+                    wallEController.UpdateEnergySystem((float)deltaTime);
+
+                    if (wallEController.EnergySystem.IsEnergyEmpty)
+                    {
+                        TriggerGameOver();
+                    }
                 }
             }
 
-            cubeArrangementModel.AdvanceTime(deltaTime);
+            //cubeArrangementModel.AdvanceTime(deltaTime);
             thumbleweedManager.Update((float)deltaTime);
+            //cactusManager.Update((float)deltaTime);
+            sunManager.Update((float)deltaTime);
+            //canManager.Update(deltaTime);
+
             imGuiController.Update((float)deltaTime);
+        }
+
+        private static void TriggerGameOver()
+        {
+            if (!isGameOver)
+            {
+                isGameOver = true;
+                gameOverMessageShown = false;
+            }
+        }
+
+        private static void RestartGame()
+        {
+            isGameOver = false;
+            gameOverMessageShown = false;
+          
+            var wallEController = cameraController.WallEController;
+           
+            if (wallEController != null)
+            {
+                wallEController.ResetToTerrainCenter();
+                wallEController.RestartGame();
+            }
+
         }
 
         private static unsafe void Window_Render(double deltaTime)
@@ -128,6 +183,7 @@ namespace Projekt_OpenGL
 
             RenderSkybox();
             Gl.UseProgram(program);
+
 
             SetUniform3(LightColorVariableName, new Vector3(red, green, blue));
             SetUniform3(LightPositionVariableName, new Vector3(lightX, lightY, lightZ));
@@ -149,111 +205,157 @@ namespace Projekt_OpenGL
                                     new Vector3(lightX, lightY, lightZ),
                                     new Vector3(cameraController.Position.X, cameraController.Position.Y, cameraController.Position.Z));
 
+            cactusManager.Render(shininess, ambient, diffuse, specular,
+                       new Vector3(red, green, blue),
+                       new Vector3(lightX, lightY, lightZ),
+                       new Vector3(cameraController.Position.X, cameraController.Position.Y, cameraController.Position.Z));
+
+            sunManager.Render(shininess, ambient, diffuse, specular,
+                       new Vector3(red, green, blue),
+                       new Vector3(lightX, lightY, lightZ),
+                       new Vector3(cameraController.Position.X, cameraController.Position.Y, cameraController.Position.Z));
+
+            canManager.Render(shininess, ambient, diffuse, specular,
+                     new Vector3(red, green, blue),
+                     new Vector3(lightX, lightY, lightZ),
+                     new Vector3(cameraController.Position.X, cameraController.Position.Y, cameraController.Position.Z));
+
+
+            if (showHitboxes)
+            {
+                RenderHitboxes();
+            }
+
             Gl.Enable(EnableCap.Blend);
 
             // UI
             RenderUI();
             imGuiController.Render();
         }
-
+        
+        // ------------------  UI ------------------------
         private static void RenderUI()
         {
+
+            RenderEnergyBar();
+            RenderScoreDisplay();
+
+            // Game Over screen
+            if (isGameOver)
+            {
+                RenderGameOverScreen();
+            }
+
             // Camera mode info
-            ImGuiNET.ImGui.Begin("Camera Control", ImGuiNET.ImGuiWindowFlags.AlwaysAutoResize | ImGuiNET.ImGuiWindowFlags.NoCollapse);
+            ImGui.Begin("Control Panel", ImGuiWindowFlags.AlwaysAutoResize);
+            ImGuiNET.ImGui.Text("Camera Mode info");
             ImGuiNET.ImGui.Text($"Current Mode: {cameraController.CurrentMode}");
             ImGuiNET.ImGui.Text(cameraController.GetCurrentModeDescription());
             ImGuiNET.ImGui.Text("Press TAB to switch camera modes");
+            ImGuiNET.ImGui.Text("Press H to show hitboxes");
             ImGuiNET.ImGui.Separator();
 
-            var wallEPos = cameraController.WallEPosition;
-            ImGuiNET.ImGui.Text($"Wall-E Position: ({wallEPos.X:F1}, {wallEPos.Y:F1}, {wallEPos.Z:F1})");
-            ImGuiNET.ImGui.Text($"Wall-E Rotation: {cameraController.WallERotationY:F1}°");
+         
 
-            // Camera info
-            var cameraPos = cameraController.Position;
-            var cameraTarget = cameraController.Target;
-            ImGuiNET.ImGui.Text($"Camera Position: ({cameraPos.X:F1}, {cameraPos.Y:F1}, {cameraPos.Z:F1})");
-            ImGuiNET.ImGui.Text($"Camera Target: ({cameraTarget.X:F1}, {cameraTarget.Y:F1}, {cameraTarget.Z:F1})");
-
-            // Terrain info
-            if (terrainCalculator != null)
-            {
-                ImGuiNET.ImGui.Separator();
-                ImGuiNET.ImGui.Text("Terrain Info:");
-
-                float terrainHeight = terrainCalculator.GetHeightAtPosition(wallEPos.X, wallEPos.Z);
-                bool withinTerrain = terrainCalculator.IsPositionWithinTerrain(wallEPos.X, wallEPos.Z);
-
-                ImGuiNET.ImGui.Text($"Terrain Height: {terrainHeight:F2}");
-                ImGuiNET.ImGui.Text($"Within Terrain: {(withinTerrain ? "Yes" : "No")}");
-
-                terrainCalculator.GetTerrainBounds(out float minX, out float maxX, out float minZ, out float maxZ);
-                ImGuiNET.ImGui.Text($"Terrain Bounds: X({minX:F1} to {maxX:F1}), Z({minZ:F1} to {maxZ:F1})");
-            }
-
-            ImGuiNET.ImGui.End();
-
-
-            // Lighting controls
-            ImGuiNET.ImGui.Begin("Lighting", ImGuiNET.ImGuiWindowFlags.AlwaysAutoResize | ImGuiNET.ImGuiWindowFlags.NoCollapse);
+            // Lightning controls
+            ImGuiNET.ImGui.Text("Ligthning Settings");
             ImGuiNET.ImGui.SliderFloat("Shininess", ref shininess, 5, 100);
             ImGuiNET.ImGui.SliderFloat("Ambient", ref ambient, 0, 1);
             ImGuiNET.ImGui.SliderFloat("Diffuse", ref diffuse, 0, 1);
             ImGuiNET.ImGui.SliderFloat("Specular", ref specular, 0, 1);
-            ImGuiNET.ImGui.End();
+      
+            ImGuiNET.ImGui.Separator();
 
-            ImGuiNET.ImGui.Begin("Light Color", ImGuiNET.ImGuiWindowFlags.AlwaysAutoResize | ImGuiNET.ImGuiWindowFlags.NoCollapse);
-            ImGuiNET.ImGui.SliderFloat("Red", ref red, 0, 1);
-            ImGuiNET.ImGui.SliderFloat("Green", ref green, 0, 1);
-            ImGuiNET.ImGui.SliderFloat("Blue", ref blue, 0, 1);
-            ImGuiNET.ImGui.End();
-
-            ImGuiNET.ImGui.Begin("Light Position", ImGuiNET.ImGuiWindowFlags.AlwaysAutoResize);
-            ImGuiNET.ImGui.InputFloat("Light X", ref lightXInput);
-            ImGuiNET.ImGui.InputFloat("Light Y", ref lightYInput);
-            ImGuiNET.ImGui.InputFloat("Light Z", ref lightZInput);
-
-            if (ImGuiNET.ImGui.Button("Apply"))
+            ImGuiNET.ImGui.Text("Render Settings");
+            ImGuiNET.ImGui.InputFloat("Render Distance", ref renderDistanceInput);
+            if (ImGuiNET.ImGui.Button("Apply Render Distance"))
             {
-                lightX = lightXInput;
-                lightY = lightYInput;
-                lightZ = lightZInput;
+                renderDistance = Math.Max(50f, Math.Min(1000f, renderDistanceInput));
+                Console.WriteLine($"Render distance set to: {renderDistance}");
             }
+            ImGuiNET.ImGui.Text($"Current Render Distance: {renderDistance:F0}");
             ImGuiNET.ImGui.End();
+        }
 
-            ImGuiNET.ImGui.Begin("Wall-E Transform", ImGuiNET.ImGuiWindowFlags.AlwaysAutoResize);
-            ImGuiNET.ImGui.SliderFloat("Scale", ref wallEScale, 0.1f, 3.0f);
-            ImGuiNET.ImGui.SliderFloat("Rotation X", ref wallERotX, -180f, 180f);
-            ImGuiNET.ImGui.SliderFloat("Rotation Z", ref wallERotZ, -180f, 180f);
-
-            // buttons
-            if (ImGuiNET.ImGui.Button("Reset Wall-E Position"))
+        private static void RenderGameOverScreen()
+        {
+            if (!gameOverMessageShown)
             {
-                cameraController.ResetWallEPosition();
-                Console.WriteLine("Wall-E reset to terrain center");
+                gameOverMessageShown = true;
             }
 
-            if (ImGuiNET.ImGui.Button("Print Full Debug Info"))
-            {
-                DebugCameraInfo();
-                cameraController.PrintTerrainDebugInfo();
-            }
+            ImGuiNET.ImGui.SetNextWindowPos(System.Numerics.Vector2.Zero);
+            ImGuiNET.ImGui.SetNextWindowSize(new System.Numerics.Vector2(1024, 768));
+
+            ImGuiNET.ImGui.Begin("Game Over",
+                ImGuiNET.ImGuiWindowFlags.NoDecoration |
+                ImGuiNET.ImGuiWindowFlags.NoMove |
+                ImGuiNET.ImGuiWindowFlags.NoResize);
+
+            var drawList = ImGuiNET.ImGui.GetWindowDrawList();
+            drawList.AddRectFilled(
+                System.Numerics.Vector2.Zero,
+                new System.Numerics.Vector2(1024, 768),
+                ImGuiNET.ImGui.ColorConvertFloat4ToU32(new System.Numerics.Vector4(0, 0, 0, 0.8f))
+            );
+
+            ImGuiNET.ImGui.SetCursorPos(new System.Numerics.Vector2(1024 / 2 - 150, 768 / 2 - 100));
+
+            ImGuiNET.ImGui.PushStyleColor(ImGuiNET.ImGuiCol.Text, new System.Numerics.Vector4(1, 0, 0, 1));
+            ImGuiNET.ImGui.Text("GAME OVER!");
+            ImGuiNET.ImGui.PopStyleColor();
+
+            ImGuiNET.ImGui.SetCursorPos(new System.Numerics.Vector2(1024 / 2 - 100, 768 / 2 - 50));
+            ImGuiNET.ImGui.Text("Wall-E ran out of energy!");
+
+            ImGuiNET.ImGui.SetCursorPos(new System.Numerics.Vector2(1024 / 2 - 80, 768 / 2 - 20));
+            ImGuiNET.ImGui.TextColored(new System.Numerics.Vector4(1, 1, 0, 1), $"Final Score: {canManager.Score} points");
+
+            ImGuiNET.ImGui.SetCursorPos(new System.Numerics.Vector2(1024 / 2 - 100, 768 / 2 + 10));
+            ImGuiNET.ImGui.Text($"Cans collected: {canManager.Score / 10}");
+
+            ImGuiNET.ImGui.SetCursorPos(new System.Numerics.Vector2(1024 / 2 - 80, 768 / 2 + 40));
+            ImGuiNET.ImGui.Text("Press R to restart");
 
             ImGuiNET.ImGui.End();
         }
 
-
-        private static void DebugCameraInfo()
+        private static void RenderScoreDisplay()
         {
-            var wallEPos = cameraController.WallEPosition;
-            var cameraPos = cameraController.Position;
-            var cameraTarget = cameraController.Target;
+            ImGuiNET.ImGui.SetNextWindowPos(new System.Numerics.Vector2(1024 - 250, 10));
+            ImGuiNET.ImGui.SetNextWindowSize(new System.Numerics.Vector2(240, 110));
+            ImGuiNET.ImGui.Begin("Score", ImGuiNET.ImGuiWindowFlags.NoDecoration | ImGuiNET.ImGuiWindowFlags.NoBackground);
 
-            Console.WriteLine($"=== Camera Debug Info ===");
-            Console.WriteLine($"Mode: {cameraController.CurrentMode}");
-            Console.WriteLine($"Wall-E: ({wallEPos.X:F1}, {wallEPos.Y:F1}, {wallEPos.Z:F1}) @ {cameraController.WallERotationY:F1}°");
-            Console.WriteLine($"Camera: ({cameraPos.X:F1}, {cameraPos.Y:F1}, {cameraPos.Z:F1})");
-            Console.WriteLine($"Target: ({cameraTarget.X:F1}, {cameraTarget.Y:F1}, {cameraTarget.Z:F1})");
+            var drawList = ImGuiNET.ImGui.GetWindowDrawList();
+            var pos = ImGuiNET.ImGui.GetWindowPos();
+
+            drawList.AddRectFilled(
+                new System.Numerics.Vector2(pos.X, pos.Y),
+                new System.Numerics.Vector2(pos.X + 240, pos.Y + 110),
+                ImGuiNET.ImGui.ColorConvertFloat4ToU32(new System.Numerics.Vector4(0.0f, 0.0f, 0.0f, 0.7f))
+            );
+
+            drawList.AddRect(
+                new System.Numerics.Vector2(pos.X, pos.Y),
+                new System.Numerics.Vector2(pos.X + 240, pos.Y + 110),
+                ImGuiNET.ImGui.ColorConvertFloat4ToU32(new System.Numerics.Vector4(1.0f, 1.0f, 1.0f, 1.0f)),
+                0f, ImGuiNET.ImDrawFlags.None, 2f
+            );
+
+            ImGuiNET.ImGui.SetCursorPos(new System.Numerics.Vector2(10, 10));
+            ImGuiNET.ImGui.TextColored(new System.Numerics.Vector4(1, 1, 0, 1), "SCORE");
+
+            ImGuiNET.ImGui.SetCursorPos(new System.Numerics.Vector2(10, 35));
+            ImGuiNET.ImGui.Text($"{canManager.Score} points");
+
+            ImGuiNET.ImGui.SetCursorPos(new System.Numerics.Vector2(10, 55));
+            ImGuiNET.ImGui.Text($"Cans left: {canManager.GetRemainingCount()}");
+
+            ImGuiNET.ImGui.SetCursorPos(new System.Numerics.Vector2(10, 75));
+            ImGuiNET.ImGui.Text($"Suns left: {sunManager.GetRemainingCount()}");
+
+
+            ImGuiNET.ImGui.End();
         }
 
         private static void Keyboard_KeyDown(IKeyboard keyboard, Key key, int arg3)
@@ -262,14 +364,21 @@ namespace Projekt_OpenGL
             {
                 case Key.Tab:
                     cameraController.ToggleCameraMode();
-                    DebugCameraInfo();
                     break;
                 case Key.Space:
-                    thumbleweedManager.ToggleAnimation(); 
+                    thumbleweedManager.ToggleAnimation();
                     break;
                 case Key.P:
-                    DebugCameraInfo();
                     cameraController.PrintTerrainDebugInfo();
+                    break;
+                case Key.H:
+                    showHitboxes = !showHitboxes;
+                    break;
+                case Key.R: 
+                    if (isGameOver)
+                    {
+                        RestartGame();
+                    }
                     break;
                 default:
                     if (IsMovementKey(key))
@@ -288,11 +397,11 @@ namespace Projekt_OpenGL
         private static bool IsMovementKey(Key key)
         {
             return key == Key.W || key == Key.A || key == Key.S || key == Key.D ||
-                   key == Key.R || key == Key.F ||
+                   key == Key.Q || key == Key.E ||
                    key == Key.Left || key == Key.Right || key == Key.Up || key == Key.Down;
         }
 
-    
+
         // ---------------------------- RENDER OBJECTS ----------------------
 
         private static unsafe void DrawWallEObject()
@@ -361,7 +470,7 @@ namespace Projekt_OpenGL
             RenderDesert();
         }
 
-   
+
         private static unsafe void RenderDesert()
         {
             Gl.UseProgram(objProgram);
@@ -422,7 +531,7 @@ namespace Projekt_OpenGL
                 view.M31, view.M32, view.M33, 0,
                 0, 0, 0, 1);
 
-            var projectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView<float>((float)Math.PI / 4f, 1024f / 768f, 0.1f, 100);
+            var projectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView<float>((float)Math.PI / 4f, 1024f / 768f, 0.1f, renderDistance);
 
             Gl.UseProgram(skyboxProgram);
 
@@ -435,6 +544,119 @@ namespace Projekt_OpenGL
             if (skyboxLoc != -1) Gl.Uniform1(skyboxLoc, 0);
 
             skybox.Render(skyboxProgram);
+        }
+
+        private static void RenderEnergyBar()
+        {
+            var wallEController = cameraController.WallEController;
+            if (wallEController == null) return;
+
+            var energy = wallEController.EnergySystem;
+
+            ImGuiNET.ImGui.SetNextWindowPos(new System.Numerics.Vector2(10, 10));
+            ImGuiNET.ImGui.SetNextWindowSize(new System.Numerics.Vector2(300, 80));
+            ImGuiNET.ImGui.Begin("Energy", ImGuiNET.ImGuiWindowFlags.NoDecoration | ImGuiNET.ImGuiWindowFlags.NoBackground);
+
+            var drawList = ImGuiNET.ImGui.GetWindowDrawList();
+            var pos = ImGuiNET.ImGui.GetWindowPos();
+
+            float barWidth = 280f;
+            float barHeight = 20f;
+            float barX = pos.X + 10;
+            float barY = pos.Y + 30;
+
+            drawList.AddRectFilled(
+                new System.Numerics.Vector2(barX, barY),
+                new System.Numerics.Vector2(barX + barWidth, barY + barHeight),
+                ImGuiNET.ImGui.ColorConvertFloat4ToU32(new System.Numerics.Vector4(0.3f, 0.3f, 0.3f, 1.0f))
+            );
+
+            float energyWidth = barWidth * (energy.EnergyPercentage / 100.0f);
+            var (r, g, b) = energy.GetEnergyBarColor();
+
+            if (energyWidth > 0)
+            {
+                drawList.AddRectFilled(
+                    new System.Numerics.Vector2(barX, barY),
+                    new System.Numerics.Vector2(barX + energyWidth, barY + barHeight),
+                    ImGuiNET.ImGui.ColorConvertFloat4ToU32(new System.Numerics.Vector4(r, g, b, 1.0f))
+                );
+            }
+
+            drawList.AddRect(
+                new System.Numerics.Vector2(barX, barY),
+                new System.Numerics.Vector2(barX + barWidth, barY + barHeight),
+                ImGuiNET.ImGui.ColorConvertFloat4ToU32(new System.Numerics.Vector4(1.0f, 1.0f, 1.0f, 1.0f)),
+                0f, ImGuiNET.ImDrawFlags.None, 2f
+            );
+
+            ImGuiNET.ImGui.Text("ENERGY");
+            ImGuiNET.ImGui.SetCursorPosY(ImGuiNET.ImGui.GetCursorPosY() + 25);
+            ImGuiNET.ImGui.Text($"{energy.CurrentEnergy:F0}/{energy.MaxEnergy:F0} ({energy.EnergyPercentage:F0}%)");
+
+            if (energy.IsEnergyLow)
+            {
+                ImGuiNET.ImGui.TextColored(new System.Numerics.Vector4(1, 0, 0, 1), "LOW ENERGY - Please Find sunlight!");
+            }
+
+            ImGuiNET.ImGui.End();
+        }
+
+        private static void RenderHitboxes()
+        {
+            var cameraPos = cameraController.Position;
+            var cameraTarget = cameraController.Target;
+            var upVector = cameraController.UpVector;
+            float aspectRatio = 1024f / 768f;
+
+            // cactus - green
+            var cactusCollisionData = cactusManager.GetCollisionData();
+            if (cactusCollisionData.Count > 0)
+            {
+                var cactusPositions = cactusManager.GetCactusPositions();
+                hitboxRenderer.RenderDynamicHitboxes(cactusCollisionData, cactusPositions,
+                                                   cameraPos, cameraTarget, upVector,
+                                                   aspectRatio, renderDistance,
+                                                   new Vector3(0.0f, 1.0f, 0.0f));
+            }
+
+            // thumbleweed - yellow
+            var thumbleweedCollisions = thumbleweedManager.GetCollisionData();
+            if (thumbleweedCollisions.Count > 0)
+            {
+                var thumbleweedPositions = thumbleweedManager.GetThumbleweedPositions();
+                hitboxRenderer.RenderDynamicHitboxes(thumbleweedCollisions, thumbleweedPositions,
+                                                   cameraPos, cameraTarget, upVector,
+                                                   aspectRatio, renderDistance,
+                                                   new Vector3(1.0f, 1.0f, 0.0f));
+            }
+
+            // suns - orange
+            var sunCollisions = sunManager.GetCollisionData();
+            if (sunCollisions.Count > 0)
+            {
+                var sunPositions = sunManager.GetSunPositions();
+                hitboxRenderer.RenderDynamicHitboxes(sunCollisions, sunPositions,
+                                                   cameraPos, cameraTarget, upVector,
+                                                   aspectRatio, renderDistance,
+                                                   new Vector3(1.0f, 0.5f, 0.0f));
+            }
+
+            // cans - red
+            var canCollisions = canManager.GetCollisionData();
+            if (canCollisions.Count > 0)
+            {
+                var canPositions = canManager.GetCanPositions();
+                hitboxRenderer.RenderDynamicHitboxes(canCollisions, canPositions,
+                                                   cameraPos, cameraTarget, upVector,
+                                                   aspectRatio, renderDistance,
+                                                   new Vector3(1.0f, 0.0f, 0.0f));
+            }
+            // WALL-E - blue
+            hitboxRenderer.RenderWallEHitbox(cameraController.WallEPosition, 1.5f,
+                                           cameraPos, cameraTarget, upVector,
+                                           aspectRatio, renderDistance,
+                                           new Vector3(0.0f, 0.0f, 1.0f));
         }
 
 
@@ -453,8 +675,15 @@ namespace Projekt_OpenGL
             skybox = new Skybox(Gl);
             LinkSkyboxProgram();
             LinkObjProgram();
-
             thumbleweedManager.Initialize(Gl, objProgram, terrainCalculator);
+            cactusManager.Initialize(Gl, objProgram, terrainCalculator);
+            sunManager.Initialize(Gl, objProgram, terrainCalculator);
+            canManager.Initialize(Gl, program, terrainCalculator);
+
+            hitboxRenderer.Initialize(Gl, objProgram);
+
+            cameraController.SetCollisionManagers(cactusManager, thumbleweedManager, sunManager, canManager);
+
         }
 
         private static void SetupTerrainHeightCalculator()
@@ -488,7 +717,6 @@ namespace Projekt_OpenGL
             }
         }
 
-   
         // --------------------- PROGRAM LINKING --------------------
         private static void LinkProgram()
         {
@@ -617,8 +845,7 @@ namespace Projekt_OpenGL
             Gl.DeleteShader(fshader);
         }
 
-
-        // ------------------  UNIFORMS -----------------
+        // ------------------------------  UNIFORMS --------------------------------
         private static unsafe void SetUniform1(string uniformName, float uniformValue)
         {
             int location = Gl.GetUniformLocation(program, uniformName);
@@ -640,6 +867,7 @@ namespace Projekt_OpenGL
             Gl.Uniform3(location, uniformValue);
             CheckError();
         }
+
         private static void SetUniformTexture(uint program, string useFlag, string texName, int unit, bool use)
         {
             int useLocation = Gl.GetUniformLocation(program, useFlag);
@@ -648,6 +876,7 @@ namespace Projekt_OpenGL
             int texLocation = Gl.GetUniformLocation(program, texName);
             if (texLocation != -1) Gl.Uniform1(texLocation, unit);
         }
+
         // Helper methods for OBJ shader
         private static unsafe void SetUniformForObjShader(uint shaderProgram, string uniformName, float uniformValue)
         {
@@ -667,8 +896,7 @@ namespace Projekt_OpenGL
             }
         }
 
-
-        // --------------------- SET MATRIX FUNCTIONS ---------------------
+        // ---------------------- SET MATRIX FUNCTIONS ---------------------------
         private static unsafe void SetModelMatrix(Matrix4X4<float> modelMatrix)
         {
             int location = Gl.GetUniformLocation(program, ModelMatrixVariableName);
@@ -712,7 +940,7 @@ namespace Projekt_OpenGL
 
         private static unsafe void SetProjectionMatrix()
         {
-            var projectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView<float>((float)Math.PI / 4f, 1024f / 768f, 0.1f, 100);
+            var projectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView<float>((float)Math.PI / 4f, 1024f / 768f, 0.1f, renderDistance);
             int location = Gl.GetUniformLocation(program, ProjectionMatrixVariableName);
             if (location == -1)
             {
@@ -758,15 +986,13 @@ namespace Projekt_OpenGL
 
         private static unsafe void SetProjectionMatrixForObjShader()
         {
-            var projectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView<float>((float)Math.PI / 4f, 1024f / 768f, 0.1f, 100);
+            var projectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView<float>((float)Math.PI / 4f, 1024f / 768f, 0.1f, 500);
             int location = Gl.GetUniformLocation(objProgram, ProjectionMatrixVariableName);
             if (location != -1)
             {
                 Gl.UniformMatrix4(location, 1, false, (float*)&projectionMatrix);
             }
         }
-
-
 
         private static void ResetObjTextureStates()
         {
@@ -838,7 +1064,11 @@ namespace Projekt_OpenGL
                 part.ReleaseGlObject();
             }
             desertTextured?.ReleaseGlObject();
-            thumbleweedManager.Dispose(); // ÚJ
+            thumbleweedManager.Dispose();
+            cactusManager.Dispose();
+            sunManager.Dispose();
+            canManager.Dispose();
+            hitboxRenderer.Dispose();
             skybox?.Dispose();
             if (skyboxProgram != 0) Gl.DeleteProgram(skyboxProgram);
             if (objProgram != 0) Gl.DeleteProgram(objProgram);

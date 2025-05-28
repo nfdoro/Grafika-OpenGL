@@ -1,13 +1,8 @@
 ﻿using Silk.NET.Maths;
 using Silk.NET.OpenGL;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Xml;
-using System.IO;
 using StbImageSharp;
-using Silk.NET.Vulkan;
 
 namespace Projekt_OpenGL
 {
@@ -65,7 +60,7 @@ namespace Projekt_OpenGL
                 ReadMaterialTextureMaps(doc, nsmgr, out materialTextureFiles);
                 var geometryMaterial = BuildGeometryMaterialMap(doc, nsmgr);
 
-                Console.WriteLine("=== Material-Texture mappings ===");
+                Console.WriteLine( "Material-Texture mapping");
                 foreach (var mat in materialTextureFiles)
                 {
                     Console.WriteLine($"Material: {mat.Key}");
@@ -169,7 +164,7 @@ namespace Projekt_OpenGL
                 return TryLoadTextureFromResource(gl, file);        
             }
 
-            Console.WriteLine($"[WARN] Nincs albedo a(z) {materialId} anyaghoz.");
+            Console.WriteLine($"[Warning]: There is no albedo texture for materialID {materialId}");
             return null;                                            
         }
 
@@ -825,7 +820,7 @@ namespace Projekt_OpenGL
                 {
                     string matId = target.Substring(1);
                     map[geomId] = matId;
-                    Console.WriteLine($"Geom-mat mapping: {geomId} -> {matId}");
+                    Console.WriteLine($"Geometry mapping: {geomId} -> {matId}");
                 }
             }
             return map;
@@ -865,7 +860,7 @@ namespace Projekt_OpenGL
                 }
             }
 
-            Console.WriteLine($"[INFO] Nincs AO textúra a(z) {materialId} anyaghoz.");
+            Console.WriteLine($"[Warning]: There is no AO texture for materialID {materialId}");
             return null;
         }
 
@@ -951,7 +946,7 @@ namespace Projekt_OpenGL
                 }
             }
 
-            Console.WriteLine($"[INFO] Nincs Metallic textúra a(z) {materialId} anyaghoz.");
+            Console.WriteLine($"[Warning]: There is no metalic texture for materialID {materialId}");
             return null;
         }
 
@@ -988,7 +983,7 @@ namespace Projekt_OpenGL
                 }
             }
 
-            Console.WriteLine($"[INFO] Nincs Normal textúra a(z) {materialId} anyaghoz.");
+            Console.WriteLine($"[Warning]: There is no normal texture for materialID {materialId}");
             return null;
         }
 
@@ -1024,7 +1019,7 @@ namespace Projekt_OpenGL
                 }
             }
 
-            Console.WriteLine($"[INFO] Nincs Opacity textúra a(z) {materialId} anyaghoz.");
+            Console.WriteLine($"[Warning]: There is no opacity texture for materialID {materialId}");
             return null;
         }
 

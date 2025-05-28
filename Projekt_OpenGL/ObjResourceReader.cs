@@ -2,6 +2,7 @@
 using Silk.NET.OpenGL;
 using System.Globalization;
 using StbImageSharp;
+using System.Numerics;
 
 namespace Projekt_OpenGL
 {
@@ -9,6 +10,9 @@ namespace Projekt_OpenGL
     {
         public uint? AOTextureId { get; set; }
         public uint? NormalTextureId { get; set; }
+        public uint? BaseColorTextureId { get; set; }
+        public uint? MetallicTextureId { get; set; }
+        public uint? RoughnessTextureId { get; set; }
 
         public TexturedObjGlObject(uint vao, uint vertices, uint colors, uint indices, uint indexArrayLength, GL gl)
             : base(vao, vertices, colors, indices, indexArrayLength, gl)
@@ -25,6 +29,18 @@ namespace Projekt_OpenGL
             if (NormalTextureId.HasValue)
             {
                 Gl.DeleteTexture(NormalTextureId.Value);
+            }
+            if (BaseColorTextureId.HasValue)
+            {
+                Gl.DeleteTexture(BaseColorTextureId.Value);
+            }
+            if (MetallicTextureId.HasValue)
+            {
+                Gl.DeleteTexture(MetallicTextureId.Value);
+            }
+            if (RoughnessTextureId.HasValue)
+            {
+                Gl.DeleteTexture(RoughnessTextureId.Value);
             }
             // for clean up
             base.ReleaseGlObject();
@@ -82,28 +98,80 @@ namespace Projekt_OpenGL
 
         private static unsafe void LoadTexturesForObject(GL Gl, string objResourceName, TexturedObjGlObject texturedObject)
         {
-            // AO 
-            string aoTextureName = $"terrain.texture.ao.png";
-            try
+            string texturePrefix = "";
+
+            if (objResourceName.Contains("can1"))
             {
-                texturedObject.AOTextureId = LoadTextureFromResource(Gl, aoTextureName);
-                Console.WriteLine($"AO texture loaded: {aoTextureName}");
+                texturePrefix = "GameOBJ.textures_can1";
             }
-            catch (Exception ex)
+            else if (objResourceName.Contains("can2"))
             {
-                Console.WriteLine($"Failed to load AO texture {aoTextureName}: {ex.Message}");
+                texturePrefix = "GameOBJ.textures_can2";
+            }
+            else if (objResourceName.Contains("terrain"))
+            {
+                texturePrefix = "terrain.texture";
+                LoadTerrainTextures(Gl, texturedObject);
+                return;
+            }
+            else
+            {
+                Console.WriteLine($"Othe object type for texture loading: {objResourceName}");
+                return;
             }
 
-            // Normal 
-            string normalTextureName = $"terrain.texture.normal.png";
+            LoadCanTextures(Gl, texturePrefix, texturedObject);
+        }
+
+        private static void LoadTerrainTextures(GL Gl, TexturedObjGlObject texturedObject)
+        {
+            // AO texture
             try
             {
-                texturedObject.NormalTextureId = LoadTextureFromResource(Gl, normalTextureName);
-                Console.WriteLine($"Normal texture loaded: {normalTextureName}");
+                texturedObject.AOTextureId = LoadTextureFromResource(Gl, "terrain.texture.ao.png");
+                Console.WriteLine("Terrain AO texture loaded");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to load normal texture {normalTextureName}: {ex.Message}");
+                Console.WriteLine($"Failed to load terrain AO texture: {ex.Message}");
+            }
+
+            // Normal texture
+            try
+            {
+                texturedObject.NormalTextureId = LoadTextureFromResource(Gl, "terrain.texture.normal.png");
+                Console.WriteLine("Terrain Normal texture loaded");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load terrain normal texture: {ex.Message}");
+            }
+        }
+
+        private static void LoadCanTextures(GL Gl, string texturePrefix, TexturedObjGlObject texturedObject)
+        {
+            var textureTypes = new[]
+            {
+                new { Name = "AO_2k.png", PropertySetter = new Action<uint>(id => texturedObject.AOTextureId = id), Description = "AO" },
+                new { Name = "Normal_2k.png", PropertySetter = new Action<uint>(id => texturedObject.NormalTextureId = id), Description = "Normal" },
+                new { Name = "BaseColor_2k.png", PropertySetter = new Action<uint>(id => texturedObject.BaseColorTextureId = id), Description = "BaseColor" },
+                new { Name = "Metallic_2k.png", PropertySetter = new Action<uint>(id => texturedObject.MetallicTextureId = id), Description = "Metallic" },
+                new { Name = "Roughness_2k.png", PropertySetter = new Action<uint>(id => texturedObject.RoughnessTextureId = id), Description = "Roughness" }
+            };
+
+            foreach (var textureType in textureTypes)
+            {
+                string textureName = $"{texturePrefix}.{textureType.Name}";
+                try
+                {
+                    uint textureId = LoadTextureFromResource(Gl, textureName);
+                    textureType.PropertySetter(textureId);
+                    Console.WriteLine($"{textureType.Description} texture loaded: {textureName}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to load {textureType.Description} texture {textureName}: {ex.Message}");
+                }
             }
         }
 
@@ -159,7 +227,8 @@ namespace Projekt_OpenGL
         {
             uint offsetPos = 0;
             uint offsetNormal = offsetPos + (3 * sizeof(float));
-            uint vertexSize = offsetNormal + (3 * sizeof(float));
+            uint offsetTexCoord = offsetNormal + (3 * sizeof(float)); 
+            uint vertexSize = offsetTexCoord + (2 * sizeof(float));
 
             uint vertices = Gl.GenBuffer();
             Gl.BindBuffer(GLEnum.ArrayBuffer, vertices);
@@ -169,6 +238,9 @@ namespace Projekt_OpenGL
 
             Gl.EnableVertexAttribArray(2);
             Gl.VertexAttribPointer(2, 3, VertexAttribPointerType.Float, false, vertexSize, (void*)offsetNormal);
+
+            Gl.VertexAttribPointer(3, 2, VertexAttribPointerType.Float, false, vertexSize, (void*)offsetTexCoord);
+            Gl.EnableVertexAttribArray(3);
 
             uint colors = Gl.GenBuffer();
             Gl.BindBuffer(GLEnum.ArrayBuffer, colors);
@@ -225,6 +297,7 @@ namespace Projekt_OpenGL
             Dictionary<Vertex, uint> vertexToIndex = new Dictionary<Vertex, uint>();
 
             bool normalsProvided = objNormals.Count > 0;
+            bool texCoordsProvided = objTexCoords.Count > 0;
 
             Console.WriteLine($"Processing OBJ: {objVertices.Count} vertices, {objFaces.Count} faces, {objNormals.Count} normals");
 
@@ -283,10 +356,19 @@ namespace Projekt_OpenGL
                         normal = computedNormal;
                     }
 
+                    Vector2D<float> texCoord = Vector2D<float>.Zero;
+                    if (texCoordsProvided && texIdx >= 0 && texIdx < objTexCoords.Count)
+                    {
+                        var tc = objTexCoords[texIdx];
+                        texCoord = new Vector2D<float>(tc[0], 1.0f - tc[1]); // Y flip OpenGL-hez
+                    }
+
+
                     var newVertex = new Vertex
                     {
                         Position = new Vector3D<float>(vertex[0], vertex[1], vertex[2]),
-                        Normal = normal
+                        Normal = normal,
+                        TexCoord = texCoord
                     };
 
                     uint index;
@@ -309,6 +391,8 @@ namespace Projekt_OpenGL
                         glVertices.Add(newVertex.Normal.X);
                         glVertices.Add(newVertex.Normal.Y);
                         glVertices.Add(newVertex.Normal.Z);
+                        glVertices.Add(newVertex.TexCoord.X); 
+                        glVertices.Add(newVertex.TexCoord.Y);
 
 
                         glColors.AddRange(faceColor);
@@ -325,6 +409,7 @@ namespace Projekt_OpenGL
         {
             public Vector3D<float> Position;
             public Vector3D<float> Normal;
+            public Vector2D<float> TexCoord;
 
             public bool Equals(Vertex other)
             {
@@ -334,7 +419,9 @@ namespace Projekt_OpenGL
                        Math.Abs(Position.Z - other.Position.Z) < epsilon &&
                        Math.Abs(Normal.X - other.Normal.X) < epsilon &&
                        Math.Abs(Normal.Y - other.Normal.Y) < epsilon &&
-                       Math.Abs(Normal.Z - other.Normal.Z) < epsilon;
+                       Math.Abs(Normal.Z - other.Normal.Z) < epsilon &&
+                       Math.Abs(TexCoord.X - other.TexCoord.X) < epsilon &&
+                       Math.Abs(TexCoord.Y - other.TexCoord.Y) < epsilon;
             }
 
         }
@@ -495,5 +582,27 @@ namespace Projekt_OpenGL
 
             Console.WriteLine($"Loaded OBJ: {objVertices.Count} vertices, {objTexCoords.Count} tex coords, {objNormals.Count} normals, {objFaces.Count} faces");
         }
+        public static (Vector3 min, Vector3 max) GetLocalBoundingBox(string resourceName)
+        {
+            ReadObjDataFromResource(resourceName,
+                out List<float[]> verts, out _, out _, out _);
+
+            var first = verts[0];
+            Vector3 min = new Vector3(first[0], first[1], first[2]);
+            Vector3 max = min;
+
+            foreach (var v in verts)
+            {
+                min.X = MathF.Min(min.X, v[0]);
+                min.Y = MathF.Min(min.Y, v[1]);
+                min.Z = MathF.Min(min.Z, v[2]);
+                max.X = MathF.Max(max.X, v[0]);
+                max.Y = MathF.Max(max.Y, v[1]);
+                max.Z = MathF.Max(max.Z, v[2]);
+            }
+
+            return (min, max);
+        }
+
     }
 }

@@ -23,6 +23,9 @@ namespace Projekt_OpenGL
             set => isAnimationEnabled = value;
         }
 
+        private const float UNIFORM_HITBOX_RADIUS = 2.0f; 
+        private const float HITBOX_HEIGHT_OFFSET = 0.5f; 
+
         private class ThumbleweedInstance
         {
             public float X, Z, Y;
@@ -34,12 +37,12 @@ namespace Projekt_OpenGL
 
             public ThumbleweedInstance(Random rand)
             {
-                Scale = 0.8f + (float)(rand.NextDouble() * 0.6f); 
+                Scale = 0.8f + (float)(rand.NextDouble() * 0.6f);
                 MoveSpeed = 2.0f + (float)(rand.NextDouble() * 3.0f);
                 MoveDirection = (float)(rand.NextDouble() * 2 * Math.PI);
                 DirectionChangeInterval = 1.0f + (float)(rand.NextDouble() * 4.0f);
                 VerticalBounceInterval = 2.0f + (float)(rand.NextDouble() * 3.0f);
-                BaseHeight = 0.4f + (float)(rand.NextDouble() * 0.6f); 
+                BaseHeight = 0.4f + (float)(rand.NextDouble() * 0.6f);
                 Y = BaseHeight;
                 IsJumping = false;
                 VerticalVelocity = 0f;
@@ -55,9 +58,25 @@ namespace Projekt_OpenGL
             LoadThumbleweedObject();
         }
 
+        public List<CollisionObject> GetCollisionData()
+        {
+            var collisionData = new List<CollisionObject>();
+
+            foreach (var tumbleweed in thumbleweeds)
+            {
+                collisionData.Add(new CollisionObject(
+                    tumbleweed.X,
+                    tumbleweed.Z,
+                    UNIFORM_HITBOX_RADIUS
+                ));
+            }
+
+            return collisionData;
+        }
+
         private void LoadThumbleweedObject()
         {
-            float[] thumbleweedColor = new float[] { 0.3f, 0.2f, 0.1f, 1.0f }; // Sötét barna
+            float[] thumbleweedColor = new float[] { 0.3f, 0.2f, 0.1f, 1.0f };
 
             try
             {
@@ -70,7 +89,7 @@ namespace Projekt_OpenGL
             catch (Exception ex)
             {
                 Console.WriteLine($"Failed to load thumbleweed: {ex.Message}");
-                Console.WriteLine("Make sure 'thumbleweed.obj' is in the Resources folder and marked as Embedded Resource");
+            
             }
         }
 
@@ -84,7 +103,7 @@ namespace Projekt_OpenGL
 
             float centerX = (minX + maxX) / 2f;
             float centerZ = (minZ + maxZ) / 2f;
-            float visibilityRange = 30f; 
+            float visibilityRange = 30f;
 
             for (int i = 0; i < count; i++)
             {
@@ -111,11 +130,9 @@ namespace Projekt_OpenGL
 
             foreach (var tumbleweed in thumbleweeds)
             {
-    
                 tumbleweed.Rotation += 60.0f * deltaTime;
                 if (tumbleweed.Rotation >= 360f) tumbleweed.Rotation -= 360f;
 
-                // Irányváltás timer
                 tumbleweed.DirectionChangeTimer += deltaTime;
                 if (tumbleweed.DirectionChangeTimer >= tumbleweed.DirectionChangeInterval)
                 {
@@ -124,21 +141,19 @@ namespace Projekt_OpenGL
                     tumbleweed.DirectionChangeInterval = 1.0f + (float)(random.NextDouble() * 4.0f);
                 }
 
-
                 tumbleweed.VerticalBounceTimer += deltaTime;
                 if (!tumbleweed.IsJumping && tumbleweed.VerticalBounceTimer >= tumbleweed.VerticalBounceInterval)
                 {
                     tumbleweed.IsJumping = true;
-                    tumbleweed.VerticalVelocity = 7.0f + (float)(random.NextDouble() * 5.0f); 
+                    tumbleweed.VerticalVelocity = 7.0f + (float)(random.NextDouble() * 5.0f);
                     tumbleweed.VerticalBounceTimer = 0f;
-                    tumbleweed.VerticalBounceInterval = 2.0f + (float)(random.NextDouble() * 4.0f); 
+                    tumbleweed.VerticalBounceInterval = 2.0f + (float)(random.NextDouble() * 4.0f);
                 }
-
 
                 if (tumbleweed.IsJumping)
                 {
                     tumbleweed.Y += tumbleweed.VerticalVelocity * deltaTime;
-                    tumbleweed.VerticalVelocity -= 9.81f * deltaTime; // Gravitáció
+                    tumbleweed.VerticalVelocity -= 9.81f * deltaTime;
 
                     if (tumbleweed.Y <= tumbleweed.BaseHeight)
                     {
@@ -161,12 +176,31 @@ namespace Projekt_OpenGL
                 }
                 else
                 {
-
                     tumbleweed.MoveDirection += (float)Math.PI;
                     if (tumbleweed.MoveDirection >= 2 * Math.PI)
                         tumbleweed.MoveDirection -= (float)(2 * Math.PI);
                 }
             }
+        }
+
+        public List<Vector3> GetThumbleweedPositions()
+        {
+            var positions = new List<Vector3>();
+
+            foreach (var tumbleweed in thumbleweeds)
+            {
+                float terrainHeight = 0f;
+                if (terrainCalculator != null)
+                {
+                    terrainHeight = terrainCalculator.GetHeightAtPosition(tumbleweed.X, tumbleweed.Z);
+                }
+
+                float hitboxY = terrainHeight + HITBOX_HEIGHT_OFFSET + tumbleweed.Y;
+
+                positions.Add(new Vector3(tumbleweed.X, hitboxY, tumbleweed.Z));
+            }
+
+            return positions;
         }
 
         public unsafe void Render(float shininess, float ambient, float diffuse, float specular,
@@ -175,7 +209,6 @@ namespace Projekt_OpenGL
             if (thumbleweedObject == null || thumbleweeds.Count == 0) return;
 
             gl.UseProgram(objProgram);
-
 
             SetUniformForObjShader("uShininess", shininess);
             SetUniformForObjShader("uAmbientStrength", ambient);
@@ -218,12 +251,12 @@ namespace Projekt_OpenGL
                     terrainHeight = terrainCalculator.GetHeightAtPosition(tumbleweed.X, tumbleweed.Z);
                 }
 
-                float thumbleweedRadius = tumbleweed.Scale * 0.7f; 
-                float finalY = terrainHeight + thumbleweedRadius + tumbleweed.Y + 0.6f; 
+                float thumbleweedRadius = tumbleweed.Scale * 0.7f;
+                float renderY = terrainHeight + thumbleweedRadius + tumbleweed.Y + 0.6f;
 
                 var transform = Matrix4X4.CreateScale(tumbleweed.Scale) *
                               Matrix4X4.CreateRotationY(tumbleweed.Rotation * (float)Math.PI / 180f) *
-                              Matrix4X4.CreateTranslation(tumbleweed.X, finalY, tumbleweed.Z);
+                              Matrix4X4.CreateTranslation(tumbleweed.X, renderY, tumbleweed.Z);
 
                 SetModelMatrix(transform);
 
@@ -241,11 +274,11 @@ namespace Projekt_OpenGL
             isAnimationEnabled = !isAnimationEnabled;
             if (isAnimationEnabled)
             {
-                Console.WriteLine($"Thumbleweed animáció bekapcsolva ({thumbleweeds.Count} darab)");
+                Console.WriteLine($"Thumbleweed animation turn on ({thumbleweeds.Count})");
             }
             else
             {
-                Console.WriteLine("Thumbleweed animáció kikapcsolva");
+                Console.WriteLine("Thumbleweed animation turn of");
             }
         }
 

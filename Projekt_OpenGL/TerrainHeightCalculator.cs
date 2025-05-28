@@ -22,13 +22,6 @@ namespace Projekt_OpenGL
             terrainOffset = offset;
 
             CalculateBounds();
-
-            Console.WriteLine($"TerrainHeightCalculator initialized:");
-            Console.WriteLine($"  Vertices: {vertices.Count}");
-            Console.WriteLine($"  Faces: {faces.Count}");
-            Console.WriteLine($"  Scale: {terrainScale}");
-            Console.WriteLine($"  Offset: {terrainOffset}");
-            Console.WriteLine($"  Bounds: X({minX:F1} to {maxX:F1}), Z({minZ:F1} to {maxZ:F1})");
         }
 
         private void CalculateBounds()
